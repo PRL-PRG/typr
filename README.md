@@ -14,7 +14,7 @@ TypR is composed of several components:
 | --- | --- | --- |
 | [TypR](https://github.com/PRL-PRG/typr) | Orchestrator. Parses R files and native libraries, resolve dependencies, and call the type-checkers. | Not testable yet |
 | [Rsem](https://github.com/E-Sh4rk/Rsem) | Gradual type-checker for R functions. | Not testable yet (only works on basic examples) |
-| [NativeSem](https://github.com/programLyrique/nativesem) | Type inference for library functions in C (support for Fortran is planned). | Tested on several libraries |
+| [NativeSem](https://github.com/programLyrique/nativesem) | Type inference for library functions in C (support for Fortran is planned). | Tested on several libraries, see [dashboard](https://prl-prg.github.io/r-typing/) |
 | [RSTT](https://github.com/E-Sh4rk/rstt) | Set-theoretic type algebra for the R language. Defines the type parser and printer, and the operations on types (e.g. subtyping, substitution, constraint solving). | The main R data-structures are supported (atomic vectors, lists, functions, attributes and classes, etc.) |
 
 Other external dependencies:
