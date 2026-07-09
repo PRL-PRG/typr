@@ -24,7 +24,11 @@ Other external dependencies:
 | [MLsem](https://github.com/E-Sh4rk/MLsem) | A typing library for dynamic languages used by our type-checkers (both for R and C code). | Released |
 | [SSTT](https://github.com/E-Sh4rk/sstt/) | A set-theoretic type library used to encode the R type algebra. | Released |
 
-We run a benchmark with typing performance and effectiveness with a dashboard on several R packages from CRAN that you can find in this repo: [r-typing](https://github.com/PRL-PRG/r-typing).
+## Performance and effectiveness
+
+We run a benchmark with typing performance and effectiveness with a dashboard automatically updated on each update on several R packages from CRAN that you can find in this repo: [r-typing](https://github.com/PRL-PRG/r-typing).
+
+[**Dashboard**](https://prl-prg.github.io/r-typing/)
 
 ## Acknowledgments
 
