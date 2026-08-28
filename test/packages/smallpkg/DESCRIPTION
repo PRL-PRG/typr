@@ -1,0 +1,3 @@
+Package: smallpkg
+Version: 0.1.0
+Title: Minimal package exercising the TypR pipeline

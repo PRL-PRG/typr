@@ -1,3 +1,12 @@
 [submodule "rstt"]
 	path = rstt
 	url = https://github.com/E-Sh4rk/rstt
+	branch = main
+[submodule "Rsem"]
+	path = Rsem
+	url = https://github.com/E-Sh4rk/Rsem
+	branch = main
+[submodule "nativesem"]
+	path = nativesem
+	url = https://github.com/programLyrique/nativesem
+	branch = new-algebra

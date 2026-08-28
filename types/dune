@@ -1,0 +1,5 @@
+; The R C API signatures live with NativeSem, but the checker looks for a
+; `types/` directory among the ancestors of the working directory. Copying them
+; here makes them reachable from the build tree (and from `dune exec typr`).
+(copy_files
+ (files %{project_root}/nativesem/types/*.ty))

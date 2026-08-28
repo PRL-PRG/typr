@@ -1,0 +1,2 @@
+useDynLib(smallpkg, .registration = TRUE, .fixes = "C_")
+export(pair_of)

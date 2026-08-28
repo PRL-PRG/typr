@@ -1,0 +1,24 @@
+
+===== Native code =====
+
+first: [lang] -> any_sexp
+
+make_pair: [any_sexp, any_sexp] -> lang
+
+
+===== R code =====
+
+C_first: (x1: lang) -> any_sexp
+
+C_make_pair: (x1: any_sexp, x2: any_sexp) -> lang
+
+
+===== packages/smallpkg/R/z_utils.R =====
+tag: ∀'a. ((x: 'a) -> 'a)<> with {  }
+
+
+===== packages/smallpkg/R/a_main.R =====
+pair_of: ((x: any_sexp, y: any_sexp) -> lang)<> with {  }
+
+first_of: ((x: any_sexp, y: any_sexp) -> any_sexp)<> with {  }
+

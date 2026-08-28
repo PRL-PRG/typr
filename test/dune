@@ -1,0 +1,19 @@
+; End-to-end smoke test of the pipeline: it must order the R files by
+; dependency, type the C sources, and use the resulting types on the R side.
+; The `.ty` files are NativeSem's; `typr/types` is a link to them, so that the
+; R-C-API signatures are found from the build directory as well.
+(rule
+ (alias runtest)
+ (deps
+  (glob_files %{project_root}/types/*.ty)
+  (source_tree packages/smallpkg))
+ (action
+  (with-stdout-to
+   smallpkg.output
+   (run %{exe:../bin/main.exe} packages/smallpkg))))
+
+(rule
+ (alias runtest)
+ (deps packages/smallpkg.expected smallpkg.output)
+ (action
+  (diff packages/smallpkg.expected smallpkg.output)))
