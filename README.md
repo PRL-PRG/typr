@@ -78,8 +78,12 @@ dune exec typr -- --prelude base.R path/to/package
    the R checker uses it. Only `.Call` is rewritten: `.C` and `.External` do
    not pass their arguments through unchanged, so the C type is not the type of
    the call.
-6. **R side** — the R files are type-checked in dependency order, with those
-   bindings in scope.
+6. **R side** — the R files are type-checked in dependency order, and so are
+   the definitions inside each file: a function definition is checked after
+   whatever its body uses, wherever that is written, while a top-level
+   statement is evaluated on the spot and so may only rely on what precedes it.
+   Mutually recursive top-level definitions are a cycle no order satisfies, and
+   one of them is still reported as unbound.
 
 ## Performance and effectiveness
 

@@ -90,6 +90,64 @@ let order_r_files files =
       (fun p -> deps_of (StrMap.find p by_path)) in
   List.map (fun p -> StrMap.find p by_path) order
 
+(* A top-level definition binding a function literal. R evaluates top-level
+   statements in order but resolves the free variables of a function body only
+   when it is called, so such a definition may be moved; anything else is
+   evaluated eagerly and stays where it is. *)
+let is_function_def (_, e) =
+  match e with
+  | PAst.Binop (("<-" | "="), ((_, PAst.Id _), (_, PAst.Function _)))
+  | PAst.Binop ("->", ((_, PAst.Function _), (_, PAst.Id _))) -> true
+  | _ -> false
+
+(* Order the top-level items of a file so that each is checked after what it
+   needs. R evaluates top-level statements in order, but resolves the free
+   variables of a function body only when the function is called, so the two
+   kinds of item get different rules:
+
+   - a function definition may follow anything it uses, wherever that is
+     written -- this is what lets a file define its functions in any order;
+   - a statement is evaluated on the spot, so it may only rely on what precedes
+     it, and statements keep their relative order.
+
+   Rsem checks definitions one at a time in the order it is given them, so this
+   is what decides whether a use resolves. Mutually recursive definitions are a
+   cycle: no order satisfies them, and one of the two is still reported as
+   unbound. *)
+let order_defs items =
+  let arr = Array.of_list items in
+  let n = Array.length arr in
+  let def i = (snd arr.(i) : R_deps.def) in
+  let names = List.init n (fun i -> (def i).name) |> List.filter_map Fun.id in
+  if List.length names <> List.length (List.sort_uniq String.compare names)
+  then
+    (* A name is defined twice in this file: which definition a use refers to
+       depends on the order, so leave it alone. *)
+    items
+  else
+    let defining =
+      List.init n (fun i -> Option.map (fun nm -> (nm, i)) (def i).name)
+      |> List.filter_map Fun.id |> StrMap.of_list
+    in
+    (* The statement each item has to stay after, so that statements keep their
+       relative order. *)
+    let prev_stmt = Array.make n (-1) in
+    let last = ref (-1) in
+    for i = 0 to n - 1 do
+      prev_stmt.(i) <- !last ;
+      if not (is_function_def (fst arr.(i))) then last := i
+    done ;
+    let deps i =
+      let is_fun = is_function_def (fst arr.(i)) in
+      let used =
+        StrSet.elements (def i).uses
+        |> List.filter_map (fun nm -> StrMap.find_opt nm defining)
+        |> List.filter (fun j -> j <> i && (is_fun || j < i))
+      in
+      if is_fun || prev_stmt.(i) < 0 then used else prev_stmt.(i) :: used
+    in
+    topo_sort (List.init n Fun.id) deps |> List.map (fun i -> arr.(i))
+
 (* Type-check one R file. This is [Driver.process], with the error recovery a
    package scan needs: Rsem treats every [##] comment as a type annotation and
    fails on the ones it cannot parse, but real packages use [##] for ordinary
@@ -109,12 +167,13 @@ let process_r_file ctx f =
       try Driver.treat_extra f.prog ctx extra
       with e -> warn "annotation" (extra_name extra) e ; ctx) ctx f.extras
   in
-  List.fold_left (fun ctx past ->
+  let items = List.combine f.prog (R_deps.defs_of_program f.prog) in
+  List.fold_left (fun ctx (past, _) ->
     try Driver.treat_def ctx past
     with e ->
       warn "definition"
         (Driver.toplevel_name past |> Option.value ~default:"<statement>") e ;
-      ctx) ctx f.prog
+      ctx) ctx (order_defs items)
 
 (* ===== Native side ===== *)
 

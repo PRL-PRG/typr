@@ -22,3 +22,7 @@ pair_of: ((x: any_sexp, y: any_sexp) -> lang)<> with {  }
 
 first_of: ((x: any_sexp, y: any_sexp) -> any_sexp)<> with {  }
 
+helper: ((x: lang) -> any_sexp)<> with {  }
+
+via_helper: ((x: lang) -> any_sexp)<> with {  }
+
