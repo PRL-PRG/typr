@@ -1,3 +1,3 @@
 (library
  (name typr)
- (libraries rsem.lang rsem.r rsem.r_types r-c-typing.lib mlsem rstt str))
+ (libraries rsem.lang rsem.r rsem.r_types r-c-typing.lib mlsem rstt str unix))

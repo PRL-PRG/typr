@@ -1,9 +1,9 @@
 
 ===== Native code =====
 
-first: [lang] -> any_sexp
-
 make_pair: [any_sexp, any_sexp] -> lang
+
+first: [lang] -> any_sexp
 
 
 ===== R code =====

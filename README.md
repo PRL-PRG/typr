@@ -55,7 +55,17 @@ dune exec typr -- path/to/package
 
 # Signatures of the functions the package builds upon (base R, imports)
 dune exec typr -- --prelude base.R path/to/package
+
+# Give up on any function that takes longer than 10s, and carry on
+dune exec typr -- --timeout 10 path/to/package
 ```
+
+`--timeout` bounds the type-checking of a *single* function, on both sides and
+through the same code (`lib/timeout.ml`), since TypR drives both checkers
+function by function. A function that runs out of time is
+reported and left untyped -- the ones that use it then report an unbound
+variable -- and the rest of the package is checked normally. Without it, one
+pathological function can hold up a whole package indefinitely.
 
 ## How the pipeline works
 
@@ -65,12 +75,16 @@ dune exec typr -- --prelude base.R path/to/package
    checker that owns the language: `Lang.Driver.parse` for R,
    `R_c_typing.Runner.parse_files` for C. The resulting ASTs are what gets
    handed to the type-checkers, so nothing is parsed twice.
-3. **Dependency resolution** (`lib/r_deps.ml`) — walking the R AST gives, per
-   top-level definition, the names it uses and the native routines it reaches
-   through `.Call`/`.C`/`.Fortran`/`.External`. This replaces the regex scan
-   NativeSem used to locate a package's entry points.
-4. **Native side** — NativeSem types the C sources, using those entry points as
-   the roots of its own call graph.
+3. **Dependency resolution** (`lib/r_deps.ml`, `lib/c_deps.ml`) — the two
+   languages are analysed the same way, here rather than in either checker.
+   Walking the R AST gives, per top-level definition, the names it uses and the
+   native routines it reaches through `.Call`/`.C`/`.Fortran`/`.External`;
+   walking the C AST gives, per function, the package functions it calls or
+   refers to. `--deps` prints both graphs.
+4. **Native side** — the C functions reachable from those entry points are
+   type-checked callees first, one at a time, through
+   `R_c_typing.Runner.infer_def`. TypR schedules them, so a native function is
+   ordered -- and bounded by `--timeout` -- exactly like an R one.
 5. **Linking** (`lib/link.ml`) — a routine's C type is a function over an
    argument *tuple*; the corresponding R binding is a closure over an R
    argument record. TypR converts the type, binds it under the R-visible

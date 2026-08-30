@@ -12,7 +12,7 @@ let speclist =
      "Only report the dependencies between R and native functions") ;
     ("--debug", Arg.Set debug, "Print intermediate information") ;
     ("--timeout", Arg.Float (fun f -> timeout := Some f),
-     "SECONDS  Per-function timeout for native inference") ;
+     "SECONDS  Give up on a function whose type-checking takes longer") ;
     ("-I", Arg.String (fun d -> include_dirs := !include_dirs @ [d]),
      "DIR  Additional directory to search for C headers") ;
     ("--prelude", Arg.String (fun f -> prelude := !prelude @ [f]),
@@ -29,10 +29,7 @@ let () =
   | Some root when not (Sys.file_exists root && Sys.is_directory root) ->
     Printf.eprintf "typr: not a package directory: %s\n" root ; exit 1
   | Some root ->
-    let native =
-      { Typr.Pipeline.default_native_options with
-        debug = !debug ; timeout = !timeout }
-    in
+    let native = { Typr.Pipeline.default_native_options with debug = !debug } in
     Typr.Pipeline.run
       { native ; prelude = !prelude ; include_dirs = !include_dirs ;
-        deps_only = !deps_only } root
+        timeout = !timeout ; deps_only = !deps_only } root
