@@ -71,8 +71,11 @@ type r_file = {
 
 let parse_r path =
   match Driver.parse path with
-  | None -> Format.eprintf "typr: could not parse %s@." path ; None
+  | None -> Format.printf "typr: could not parse %s@.@." path ; None
   | Some (prog, extras) -> Some { path ; prog ; extras ; defs = R_deps.defs_of_program prog }
+  | exception e ->
+    Format.printf "typr: could not parse %s (%s)@.@." path (Printexc.to_string e) ;
+    None
 
 (* Order the R files so that a file comes after the files defining the names it
    uses. The dependency graph is computed between *definitions*; it is then

@@ -1,0 +1,8 @@
+Package: known.issues
+Version: 0.1.0
+Title: Minimal reproductions of the limitations found on real R packages
+Description: Not a real package. Each definition is the smallest R code that
+    exhibits one of the difficulties listed in docs/r-experiment-report.md.
+    When one of them is lifted, the expected output of this package changes,
+    which is how the suite records progress.
+License: MIT

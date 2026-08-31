@@ -1,0 +1,40 @@
+
+===== Native code =====
+
+
+===== R code =====
+
+
+===== prelude prelude/base.R =====
+platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+.Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+
+===== packages/known-issues/R/issues.R =====
+typr: skipping definition for_break (Invalid_argument("Expression contains an orphan ret expression."))
+
+typr: skipping definition for_next (Invalid_argument("Expression contains an orphan ret expression."))
+
+while_break: ∀'a. ((x: 'a) -> 'a)<> with {  }
+
+cache: {  }
+
+typr: skipping definition fill_cache (Invalid_argument("Cannot assign to an immutable variable."))
+
+nchar_of_scalar: (() -> INT1)<> with {  }
+
+three: (() -> CHR<>)<> with {  }
+
+defined_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
+
+uses_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
+
+mutual_b: Untypeable: unbound variable
+Line 33, characters 24-32
+name: mutual_a
+
+mutual_a: Untypeable: unbound variable
+Line 32, characters 24-32
+name: mutual_b
+

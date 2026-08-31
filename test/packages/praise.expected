@@ -1,0 +1,57 @@
+
+===== Native code =====
+
+
+===== R code =====
+
+
+===== prelude prelude/base.R =====
+platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+.Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+
+===== packages/praise/R/adjective.R =====
+adjective: CHR<>
+
+
+===== packages/praise/R/adverb.R =====
+adverb_manner: CHR<>
+
+adverb: CHR<>
+
+
+===== packages/praise/R/exclamation.R =====
+exclamation: CHR<>
+
+
+===== packages/praise/R/rpackage.R =====
+rpackage: CHR<>
+
+
+===== packages/praise/R/verb.R =====
+created: CHR<>
+
+creating: CHR<>
+
+
+===== packages/praise/R/package.R =====
+_: null
+
+praise_parts: { adjective: CHR<>, adverb: CHR<>, adverb_manner: CHR<>, created: CHR<>, creating: CHR<>, exclamation: CHR<>, rpackage: CHR<> }
+
+template_pattern: "\\\\$\\\\{([^\\\\}]+)\\\\}"<> with {  }
+
+is_template: (((x: vec) -> lgl<>) & ((x: vec1) -> lgl1<>))<> with {  }
+
+capitalize: ((x: vec) -> CHR1)<> with {  }
+
+match_case_sub: (((pattern: vec1, part: vec, replacement: vec1, text: vec) -> CHR) &
+ ((pattern: vec1, part: vec, replacement: vec1, text: vec1) ->
+ CHR1))<> with {  }
+
+replace_one_template: ((template: vec1) -> CHR1)<> with {  }
+
+praise: ∀'a. ((template: (CHR1 & ~"You are ${adjective}!"<> with {  } | 'a &
+ vec1)?) -> CHR1 | vec1 & 'a)<> with {  }
+

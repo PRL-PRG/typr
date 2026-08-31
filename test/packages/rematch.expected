@@ -1,0 +1,14 @@
+typr: could not parse packages/rematch/R/package.R (Failure("Unsupported token: Na"))
+
+
+===== Native code =====
+
+
+===== R code =====
+
+
+===== prelude prelude/base.R =====
+platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+.Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+

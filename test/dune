@@ -1,6 +1,7 @@
-; End-to-end smoke test of the pipeline: it must order the R files by
-; dependency, type the C sources, and use the resulting types on the R side.
-; The `.ty` files are NativeSem's; `typr/types` is a link to them, so that the
+; ===== Pipeline smoke test =====
+; It must order the R files by dependency, type the C sources, and use the
+; resulting types on the R side.
+; The `.ty` files are NativeSem's; `typr/types` copies them, so that the
 ; R-C-API signatures are found from the build directory as well.
 (rule
  (alias runtest)
@@ -17,3 +18,75 @@
  (deps packages/smallpkg.expected smallpkg.output)
  (action
   (diff packages/smallpkg.expected smallpkg.output)))
+
+; ===== R packages =====
+; Real CRAN packages (and one synthetic package of minimal reproductions),
+; type-checked against the base R signatures of `prelude/base.R`. See
+; ../docs/r-experiment-report.md for what each of them exercises.
+(rule
+ (alias runtest)
+ (deps
+  (glob_files %{project_root}/types/*.ty)
+  prelude/base.R
+  (source_tree packages/praise))
+ (action
+  (with-stdout-to
+   praise.output
+   (run %{exe:../bin/main.exe} --prelude prelude/base.R packages/praise))))
+
+(rule
+ (alias runtest)
+ (deps packages/praise.expected praise.output)
+ (action
+  (diff packages/praise.expected praise.output)))
+
+(rule
+ (alias runtest)
+ (deps
+  (glob_files %{project_root}/types/*.ty)
+  prelude/base.R
+  (source_tree packages/rematch))
+ (action
+  (with-stdout-to
+   rematch.output
+   (run %{exe:../bin/main.exe} --prelude prelude/base.R packages/rematch))))
+
+(rule
+ (alias runtest)
+ (deps packages/rematch.expected rematch.output)
+ (action
+  (diff packages/rematch.expected rematch.output)))
+
+(rule
+ (alias runtest)
+ (deps
+  (glob_files %{project_root}/types/*.ty)
+  prelude/base.R
+  (source_tree packages/prettyunits))
+ (action
+  (with-stdout-to
+   prettyunits.output
+   (run %{exe:../bin/main.exe} --prelude prelude/base.R packages/prettyunits))))
+
+(rule
+ (alias runtest)
+ (deps packages/prettyunits.expected prettyunits.output)
+ (action
+  (diff packages/prettyunits.expected prettyunits.output)))
+
+(rule
+ (alias runtest)
+ (deps
+  (glob_files %{project_root}/types/*.ty)
+  prelude/base.R
+  (source_tree packages/known-issues))
+ (action
+  (with-stdout-to
+   known-issues.output
+   (run %{exe:../bin/main.exe} --prelude prelude/base.R packages/known-issues))))
+
+(rule
+ (alias runtest)
+ (deps packages/known-issues.expected known-issues.output)
+ (action
+  (diff packages/known-issues.expected known-issues.output)))

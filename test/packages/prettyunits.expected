@@ -1,0 +1,78 @@
+typr: could not parse packages/prettyunits/R/color.R (Failure("Unsupported token: Na"))
+
+typr: could not parse packages/prettyunits/R/numbers.R (Failure("Unsupported token: Na"))
+
+typr: could not parse packages/prettyunits/R/p-value.R (Failure("Unsupported token: Na"))
+
+typr: could not parse packages/prettyunits/R/rounding.R (Failure("Unsupported token: Na"))
+
+typr: could not parse packages/prettyunits/R/sizes.R (Failure("Unsupported token: Na"))
+
+typr: could not parse packages/prettyunits/R/time.R (Failure("Unsupported token: Na"))
+
+
+===== Native code =====
+
+
+===== R code =====
+
+
+===== prelude prelude/base.R =====
+platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+.Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+
+===== packages/prettyunits/R/pretty-package.R =====
+_: "_PACKAGE"<> with {  }
+
+
+===== packages/prettyunits/R/xtime-ago.R =====
+time_ago: Untypeable: unbound variable
+Line 47, characters 12-27
+name: format_time_ago
+
+vague_dt: Untypeable: unbound variable
+Line 87, characters 12-27
+name: format_time_ago
+
+
+===== packages/prettyunits/R/time-ago.R =====
+typr: skipping annotation ## Simplest to quit here for empty input (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping definition format_time_ago (Invalid_argument("Cannot assign to an immutable variable."))
+
+
+===== packages/prettyunits/R/xnumbers-docs.R =====
+pretty_num: Untypeable: unbound variable
+Line 27, characters 14-24
+name: format_num
+
+compute_num: Untypeable: unbound variable
+Line 33, characters 15-25
+name: format_num
+
+
+===== packages/prettyunits/R/xsizes-docs.R =====
+pretty_bytes: Untypeable: unbound variable
+Line 27, characters 16-28
+name: format_bytes
+
+compute_bytes: Untypeable: unbound variable
+Line 33, characters 17-29
+name: format_bytes
+
+
+===== packages/prettyunits/R/xtime.R =====
+pretty_ms: Untypeable: unbound variable
+Line 17, characters 13-24
+name: format_time
+
+pretty_sec: Untypeable: unbound variable
+Line 33, characters 14-25
+name: format_time
+
+pretty_dt: Untypeable: unbound variable
+Line 48, characters 13-24
+name: format_time
+
