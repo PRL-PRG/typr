@@ -1,5 +1,3 @@
-typr: could not parse packages/rematch/R/package.R (Failure("Unsupported token: Na"))
-
 
 ===== Native code =====
 
@@ -11,4 +9,22 @@ typr: could not parse packages/rematch/R/package.R (Failure("Unsupported token: 
 platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
 
 .Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+
+===== packages/rematch/R/package.R =====
+typr: skipping annotation ## Full matches (R_types__IO.SyntaxError(_, "syntax error"))
+
+_: null
+
+re_match: (typr: skipping definition re_match (Invalid_argument("N-ary operator cannot be empty"))
+
+re_match_all1: Untypeable: untypeable encoding
+Line 110, characters 15-42
+application of attr failed
+argument is of type @('match, "match.length"<> with {  })
+
+re_match_all: Untypeable: untypeable encoding
+Line 100, characters 12-33
+application of is.character failed
+argument is of type @('pattern)
 

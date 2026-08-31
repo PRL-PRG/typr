@@ -1,15 +1,3 @@
-typr: could not parse packages/prettyunits/R/color.R (Failure("Unsupported token: Na"))
-
-typr: could not parse packages/prettyunits/R/numbers.R (Failure("Unsupported token: Na"))
-
-typr: could not parse packages/prettyunits/R/p-value.R (Failure("Unsupported token: Na"))
-
-typr: could not parse packages/prettyunits/R/rounding.R (Failure("Unsupported token: Na"))
-
-typr: could not parse packages/prettyunits/R/sizes.R (Failure("Unsupported token: Na"))
-
-typr: could not parse packages/prettyunits/R/time.R (Failure("Unsupported token: Na"))
-
 
 ===== Native code =====
 
@@ -23,8 +11,106 @@ platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any
 .Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
 
 
+===== packages/prettyunits/R/color.R =====
+color_diff_cie76: Untypeable: unbound variable
+Line 49, characters 7-8
+name: t
+
+pretty_color: Untypeable: untypeable encoding
+Line 12, characters 12-25
+application of length failed
+argument is of type @('color)
+
+pretty_colour: Untypeable: unbound variable
+Line 32, characters 17-29
+name: pretty_color
+
+_: null
+
+
+===== packages/prettyunits/R/xnumbers-docs.R =====
+pretty_num: Untypeable: unbound variable
+Line 27, characters 14-24
+name: format_num
+
+compute_num: Untypeable: unbound variable
+Line 33, characters 15-25
+name: format_num
+
+
+===== packages/prettyunits/R/numbers.R =====
+typr: skipping annotation ## Zero number (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## NA and NaN number (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## String. For fractions we always show ... (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping definition format_num (Invalid_argument("Cannot assign to an immutable variable."))
+
+
+===== packages/prettyunits/R/rounding.R =====
+typr: skipping annotation ## Put in the special values (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## Put in the special values (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## When 0 give the digits as the output (R_types__IO.LexicalError(_, "Unexpected char: 0"))
+
+typr: skipping annotation ## Otherwise set it to digits orders of ... (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## current value (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## When the order of magnitude is an exa... (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## that the math works for determing the... (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## Find times when rounding increases th... (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## bottomlog to a corresponding degree. ... (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## should be 1.0 not 1.00. (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## Do the rounding (R_types__IO.SyntaxError(_, "syntax error"))
+
+pretty_round: Untypeable: untypeable encoding
+Line 20, characters 15-23
+application of is.na failed
+argument is of type @('x)
+
+pretty_signif: Untypeable: untypeable encoding
+Line 84, characters 13-21
+application of is.na failed
+argument is of type @('x)
+
+
+===== packages/prettyunits/R/p-value.R =====
+pretty_p_value: Untypeable: untypeable encoding
+Line 13, characters 12-30
+application of is.numeric failed
+argument is of type @(DBL1<> with {  } | 'minval)
+
+
 ===== packages/prettyunits/R/pretty-package.R =====
 _: "_PACKAGE"<> with {  }
+
+
+===== packages/prettyunits/R/xsizes-docs.R =====
+pretty_bytes: Untypeable: unbound variable
+Line 27, characters 16-28
+name: format_bytes
+
+compute_bytes: Untypeable: unbound variable
+Line 33, characters 17-29
+name: format_bytes
+
+
+===== packages/prettyunits/R/sizes.R =====
+typr: skipping annotation ## Zero bytes (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## NA and NaN bytes (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## String. For fractions we always show ... (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping definition format_bytes (Invalid_argument("Cannot assign to an immutable variable."))
 
 
 ===== packages/prettyunits/R/xtime-ago.R =====
@@ -43,26 +129,6 @@ typr: skipping annotation ## Simplest to quit here for empty input (R_types__IO.
 typr: skipping definition format_time_ago (Invalid_argument("Cannot assign to an immutable variable."))
 
 
-===== packages/prettyunits/R/xnumbers-docs.R =====
-pretty_num: Untypeable: unbound variable
-Line 27, characters 14-24
-name: format_num
-
-compute_num: Untypeable: unbound variable
-Line 33, characters 15-25
-name: format_num
-
-
-===== packages/prettyunits/R/xsizes-docs.R =====
-pretty_bytes: Untypeable: unbound variable
-Line 27, characters 16-28
-name: format_bytes
-
-compute_bytes: Untypeable: unbound variable
-Line 33, characters 17-29
-name: format_bytes
-
-
 ===== packages/prettyunits/R/xtime.R =====
 pretty_ms: Untypeable: unbound variable
 Line 17, characters 13-24
@@ -75,4 +141,16 @@ name: format_time
 pretty_dt: Untypeable: unbound variable
 Line 48, characters 13-24
 name: format_time
+
+
+===== packages/prettyunits/R/time.R =====
+typr: skipping annotation ## Exact for small ones (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## Approximate for others, in seconds (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## handle NAs (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping annotation ## handle non-NAs (R_types__IO.SyntaxError(_, "syntax error"))
+
+typr: skipping definition format_time (Invalid_argument("Cannot assign to an immutable variable."))
 

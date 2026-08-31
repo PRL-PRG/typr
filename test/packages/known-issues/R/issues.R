@@ -1,3 +1,13 @@
+# ---- (0) NA and NaN --------------------------------------------------------
+# Fixed. R has one missing value per mode, and each now types in that mode;
+# `NaN` is a double, as `typeof(NaN)` says.
+na_lgl  <- NA
+na_int  <- NA_integer_
+na_real <- NA_real_
+na_cplx <- NA_complex_
+na_chr  <- NA_character_
+nan     <- NaN
+
 # ---- (1) `break` / `next` inside a `for` loop -------------------------------
 # Rejected with "Expression contains an orphan ret expression"; the same loop
 # written with `while` is accepted, so it is the `for` lowering that is at
