@@ -34,7 +34,9 @@ name: format_num
 
 
 ===== packages/prettyunits/R/numbers.R =====
-typr: skipping definition format_num (Invalid_argument("Cannot assign to an immutable variable."))
+format_num: Untypeable: unbound variable
+Line 7, characters 6-15
+name: match.arg
 
 
 ===== packages/prettyunits/R/rounding.R =====
@@ -68,7 +70,9 @@ name: format_bytes
 
 
 ===== packages/prettyunits/R/sizes.R =====
-typr: skipping definition format_bytes (Invalid_argument("Cannot assign to an immutable variable."))
+format_bytes: Untypeable: unbound variable
+Line 7, characters 6-15
+name: match.arg
 
 
 ===== packages/prettyunits/R/xtime-ago.R =====
@@ -82,7 +86,9 @@ name: format_time_ago
 
 
 ===== packages/prettyunits/R/time-ago.R =====
-typr: skipping definition format_time_ago (Invalid_argument("Cannot assign to an immutable variable."))
+format_time_ago: Untypeable: unbound variable
+Line 4, characters 7-17
+name: expression
 
 
 ===== packages/prettyunits/R/xtime.R =====
@@ -100,5 +106,7 @@ name: format_time
 
 
 ===== packages/prettyunits/R/time.R =====
-typr: skipping definition format_time (Invalid_argument("Cannot assign to an immutable variable."))
+format_time: Untypeable: unbound variable
+Line 11, characters 4-14
+name: data.frame
 

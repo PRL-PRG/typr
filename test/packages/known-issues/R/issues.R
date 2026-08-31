@@ -83,31 +83,46 @@ fill_acache <- function() { acache <<- list(a = 1) ; invisible() }
 #| .onLoad : (libname: CHR1, pkgname: CHR1) -> null
 .onLoad <- function(libname, pkgname) { .symbols <<- list(tick = "v") ; NULL }
 
-# ---- (2b) An assignment inside a top-level expression ----------------------
-# The same "immutable variable" message, a different cause: `Scope.new_scope`
-# is opened for a function and nothing else, so a `{ ... }` block used as a
-# top-level *expression* assigns to top-level names -- which are immutable
-# unless declared. That much matches R, where braces are not a scope. This is
-# what stops `prettyunits::format_time_ago`, which has no `<<-` in it at all --
-# though that one wraps its block in `local()`, which *does* evaluate in a new
-# environment, so the top-level treatment is wrong for it to begin with.
+# ---- (2b) An assignment inside a top-level expression -- fixed -------------
+# The same "immutable variable" message used to come from a second, unrelated
+# cause: `Scope.new_scope` is opened for a function and nothing else, so an
+# assignment nested in a top-level *expression* targeted a top-level name,
+# which is immutable unless declared. Two fixes, for the two shapes.
+#
+# A brace is not a scope in R, so these really are top-level definitions and
+# they are now created as such -- assigned once, no declaration needed.
 blk <- { u <- 1 ; u }
+use_u <- function() u
 
-# Declaring the inner name with a value type fixes it, exactly as in (2).
+if (interactive()) { z <- 1 } else { z <- 2 }
+use_z <- function() z
+
+# A `for` at top level, whose loop variable persists afterwards as it does in R.
+for (i in 1:2) { w <- i }
+use_w <- function() w
+use_i <- function() i
+
+# A declared name keeps the type its declaration gives it, and stays mutable.
 #| au : dbl
 ablk <- { au <- 1 ; au }
 
-# It does not carry over to an inner *function*, though, which is what
-# `format_time_ago` needs: a function signature stays immutable, and declaring
-# a regular type instead reaches the `SigTy` path, where the coercion fails on
-# the *identity* of the def-site argument. `Arg.mk` stamps a fresh enum
-# constant into the `id` field of every argument it builds, and only
-# `Arg.mk_polymorphic` makes that field a type variable; the type parser builds
-# the non-polymorphic form only, so the annotated and the inferred argument
-# carry two constants nothing can reconcile. The `'a` below is incidental --
-# `(a:INT) <= (a:INT)` is false too.
-#| afn : ((a:dbl1) -> dbl1)<>
-fblk <- local({ afn <- function(a) a + 1 ; list(h = afn) })
+# `local()`, on the other hand, *does* evaluate in a fresh environment, so its
+# names are not top-level at all. It gets a scope instead -- which is what
+# `prettyunits::format_time_ago` needs, and what lets an inner function be
+# annotated, since the name is then an ordinary scoped local.
+fblk <- local({
+  #| afn : (a:dbl1) -> dbl1
+  afn <- function(a) a + 1
+  list(h = afn)
+})
+use_fblk <- function() fblk$h(1)
+
+# `local` + `<<-`, the counter idiom (ggplot2 builds its ids this way): the
+# scope makes `n` a mutable local of the block, so the closure can assign it.
+counter <- local({ n <- 0 ; function() { n <<- n + 1 ; n } })
+
+# What a `local` block binds must not escape it.
+leaked <- function() afn
 
 # ---- (3) Elementwise functions need one overload per length class ----------
 # `nchar` is length-preserving, which the algebra cannot say, so base.R
