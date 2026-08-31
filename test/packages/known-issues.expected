@@ -29,11 +29,15 @@ forward_dots: (((x: vec) -> CHR) & ((x: vec1) -> CHR1) & (@(x: any, ...: (absent
 
 annotated: (x: dbl) -> dbl
 
-typr: skipping definition for_break (Invalid_argument("Expression contains an orphan ret expression."))
+for_break: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
-typr: skipping definition for_next (Invalid_argument("Expression contains an orphan ret expression."))
+for_next: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 while_break: ∀'a. ((x: 'a) -> 'a)<> with {  }
+
+for_break_cond: (() -> dbl1)<> with {  }
+
+for_nested: (() -> dbl1)<> with {  }
 
 cache: {  }
 
@@ -44,11 +48,11 @@ nchar_of_scalar: (() -> INT1)<> with {  }
 three: (() -> CHR<>)<> with {  }
 
 unbound_alone: Untypeable: unbound variable
-Line 59, characters 29-41
+Line 63, characters 29-41
 name: undefined_fn
 
 unbound_after_call: Untypeable: unbound variable
-Line 60, characters 52-64
+Line 64, characters 52-64
 name: undefined_fn
 
 bound_after_call: ((x: vec) -> INT1<>)<> with {  }
@@ -58,10 +62,10 @@ defined_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 uses_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 mutual_b: Untypeable: unbound variable
-Line 70, characters 24-32
+Line 74, characters 24-32
 name: mutual_a
 
 mutual_a: Untypeable: unbound variable
-Line 69, characters 24-32
+Line 73, characters 24-32
 name: mutual_b
 

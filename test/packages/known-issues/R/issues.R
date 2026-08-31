@@ -27,12 +27,16 @@ forward_dots <- function(x, ...) sub("a", "b", x, ...)
 annotated <- function(x) x
 
 # ---- (1) `break` / `next` inside a `for` loop -------------------------------
-# Rejected with "Expression contains an orphan ret expression"; the same loop
-# written with `while` is accepted, so it is the `for` lowering that is at
-# fault.
+# Fixed. The loop was rejected with "Expression contains an orphan ret
+# expression" while the same loop written with `while` was accepted: MLsem's
+# lowering of `while` wraps the body in a BLoop block, and Rsem's `for` did
+# not, so the jump had no block to return to. The body -- the loop variable's
+# assignment included -- now gets one.
 for_break <- function(x) { for (i in 1:2) { break } ; x }
 for_next  <- function(x) { for (i in 1:2) { next } ; x }
 while_break <- function(x) { while (TRUE) { break } ; x }
+for_break_cond <- function() { s <- 0 ; for (i in 1:9) { if (i > 3) break ; s <- i } ; s }
+for_nested <- function() { s <- 0 ; for (i in 1:3) { for (j in 1:3) break ; s <- i } ; s }
 
 # ---- (2) `<<-` onto a top-level binding ------------------------------------
 # The idiom every package `.onLoad` uses. A top-level definition is immutable,
