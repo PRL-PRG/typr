@@ -45,10 +45,9 @@ unbound_alone: Untypeable: unbound variable
 Line 49, characters 29-41
 name: undefined_fn
 
-unbound_after_call: Untypeable: untypeable encoding
-Line 50, characters 41-49
-application of nchar failed
-argument is of type @('x)
+unbound_after_call: Untypeable: unbound variable
+Line 50, characters 52-64
+name: undefined_fn
 
 bound_after_call: ((x: vec) -> INT1<>)<> with {  }
 

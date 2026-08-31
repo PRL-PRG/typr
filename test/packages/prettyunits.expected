@@ -16,10 +16,9 @@ color_diff_cie76: Untypeable: unbound variable
 Line 49, characters 7-8
 name: t
 
-pretty_color: Untypeable: untypeable encoding
-Line 12, characters 12-25
-application of length failed
-argument is of type @('color)
+pretty_color: Untypeable: unbound variable
+Line 14, characters 4-13
+name: structure
 
 pretty_colour: Untypeable: unbound variable
 Line 32, characters 17-29
@@ -71,22 +70,19 @@ typr: skipping annotation ## should be 1.0 not 1.00. (R_types__IO.SyntaxError(_,
 
 typr: skipping annotation ## Do the rounding (R_types__IO.SyntaxError(_, "syntax error"))
 
-pretty_round: Untypeable: untypeable encoding
-Line 20, characters 15-23
-application of is.na failed
-argument is of type @('x)
+pretty_round: Untypeable: unbound variable
+Line 21, characters 19-25
+name: is.nan
 
-pretty_signif: Untypeable: untypeable encoding
-Line 84, characters 13-21
-application of is.na failed
-argument is of type @('x)
+pretty_signif: Untypeable: unbound variable
+Line 85, characters 17-23
+name: is.nan
 
 
 ===== packages/prettyunits/R/p-value.R =====
-pretty_p_value: Untypeable: untypeable encoding
-Line 13, characters 12-30
-application of is.numeric failed
-argument is of type @(DBL1<> with {  } | 'minval)
+pretty_p_value: Untypeable: unbound variable
+Line 13, characters 34-43
+name: is.factor
 
 
 ===== packages/prettyunits/R/pretty-package.R =====

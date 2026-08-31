@@ -21,13 +21,11 @@ re_match: (@(text: vec, pattern: CHR, ...: (absent, any)) |
  @(CHR, text: vec, ...: (absent, any)) |
  @(clx, text: vec, ...: (absent, any)) -> empty)<> with {  }
 
-re_match_all1: Untypeable: untypeable encoding
-Line 110, characters 15-42
-application of attr failed
-argument is of type @('match, "match.length"<> with {  })
+re_match_all1: Untypeable: unbound variable
+Line 114, characters 11-20
+name: as.vector
 
-re_match_all: Untypeable: untypeable encoding
-Line 100, characters 12-33
-application of is.character failed
-argument is of type @('pattern)
+re_match_all: Untypeable: unbound variable
+Line 103, characters 11-19
+name: gregexpr
 
