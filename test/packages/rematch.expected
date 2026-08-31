@@ -12,8 +12,6 @@ platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any
 
 
 ===== packages/rematch/R/package.R =====
-typr: skipping annotation ## Full matches (R_types__IO.SyntaxError(_, "syntax error"))
-
 _: null
 
 re_match: (@(text: vec, pattern: CHR, ...: (absent, any)) |

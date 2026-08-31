@@ -38,38 +38,10 @@ name: format_num
 
 
 ===== packages/prettyunits/R/numbers.R =====
-typr: skipping annotation ## Zero number (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## NA and NaN number (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## String. For fractions we always show ... (R_types__IO.SyntaxError(_, "syntax error"))
-
 typr: skipping definition format_num (Invalid_argument("Cannot assign to an immutable variable."))
 
 
 ===== packages/prettyunits/R/rounding.R =====
-typr: skipping annotation ## Put in the special values (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## Put in the special values (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## When 0 give the digits as the output (R_types__IO.LexicalError(_, "Unexpected char: 0"))
-
-typr: skipping annotation ## Otherwise set it to digits orders of ... (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## current value (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## When the order of magnitude is an exa... (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## that the math works for determing the... (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## Find times when rounding increases th... (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## bottomlog to a corresponding degree. ... (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## should be 1.0 not 1.00. (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## Do the rounding (R_types__IO.SyntaxError(_, "syntax error"))
-
 pretty_round: Untypeable: unbound variable
 Line 21, characters 19-25
 name: is.nan
@@ -100,12 +72,6 @@ name: format_bytes
 
 
 ===== packages/prettyunits/R/sizes.R =====
-typr: skipping annotation ## Zero bytes (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## NA and NaN bytes (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## String. For fractions we always show ... (R_types__IO.SyntaxError(_, "syntax error"))
-
 typr: skipping definition format_bytes (Invalid_argument("Cannot assign to an immutable variable."))
 
 
@@ -120,8 +86,6 @@ name: format_time_ago
 
 
 ===== packages/prettyunits/R/time-ago.R =====
-typr: skipping annotation ## Simplest to quit here for empty input (R_types__IO.SyntaxError(_, "syntax error"))
-
 typr: skipping definition format_time_ago (Invalid_argument("Cannot assign to an immutable variable."))
 
 
@@ -140,13 +104,5 @@ name: format_time
 
 
 ===== packages/prettyunits/R/time.R =====
-typr: skipping annotation ## Exact for small ones (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## Approximate for others, in seconds (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## handle NAs (R_types__IO.SyntaxError(_, "syntax error"))
-
-typr: skipping annotation ## handle non-NAs (R_types__IO.SyntaxError(_, "syntax error"))
-
 typr: skipping definition format_time (Invalid_argument("Cannot assign to an immutable variable."))
 

@@ -108,7 +108,9 @@ pathological function can hold up a whole package indefinitely.
    whatever its body uses, wherever that is written, while a top-level
    statement is evaluated on the spot and so may only rely on what precedes it.
    Mutually recursive top-level definitions are a cycle no order satisfies, and
-   one of them is still reported as unbound.
+   one of them is still reported as unbound. Types are written in `#|` comments --
+   `#| f : (x: dbl) -> dbl` -- which is also how the prelude declares the
+   signatures it supplies.
 
 ## Performance and effectiveness
 

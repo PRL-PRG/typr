@@ -16,6 +16,16 @@ nan     <- NaN
 # call-sites instead of dropped.
 forward_dots <- function(x, ...) sub("a", "b", x, ...)
 
+# ---- (0c) Prose comments collided with annotations --------------------------
+# Fixed. The annotation marker used to be `##`, which is also a common way of
+# writing an ordinary comment in R, so every such line was parsed as a
+# declaration and reported as a syntax error. It is now `#|`: the prose below
+# is passed over in silence, and only the `#|` line annotates. Were it not
+# read, the inferred type would be the polymorphic `(x: 'a) -> 'a`.
+## Twice the input -- prose, not a declaration.
+#| annotated : (x: dbl) -> dbl
+annotated <- function(x) x
+
 # ---- (1) `break` / `next` inside a `for` loop -------------------------------
 # Rejected with "Expression contains an orphan ret expression"; the same loop
 # written with `while` is accepted, so it is the `for` lowering that is at
