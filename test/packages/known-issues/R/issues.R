@@ -66,10 +66,41 @@ for_break_cond <- function() { s <- 0 ; for (i in 1:9) { if (i > 3) break ; s <-
 for_nested <- function() { s <- 0 ; for (i in 1:3) { for (j in 1:3) break ; s <- i } ; s }
 
 # ---- (2) `<<-` onto a top-level binding ------------------------------------
-# The idiom every package `.onLoad` uses. A top-level definition is immutable,
-# so the assignment is rejected outright.
+# Resolved by annotation. A top-level definition is immutable, so the
+# superassignment is rejected outright...
 cache <- list()
 fill_cache <- function() { cache <<- list(a = 1) ; invisible() }
+
+# ...but a *value* annotation makes the binding `AnnotMut`, and then it is
+# accepted. This is the idiom every package `.onLoad` uses, and it needed the
+# dot-name fix of (0d) as much as this one.
+#| acache : { a: dbl1 } | { }
+acache <- list()
+fill_acache <- function() { acache <<- list(a = 1) ; invisible() }
+
+#| .symbols : { tick: CHR1 } | { }
+.symbols <- list()
+#| .onLoad : (libname: CHR1, pkgname: CHR1) -> null
+.onLoad <- function(libname, pkgname) { .symbols <<- list(tick = "v") ; NULL }
+
+# ---- (2b) An assignment inside a top-level expression ----------------------
+# The same "immutable variable" message, a different cause: `Scope.new_scope`
+# is opened for a function and nothing else, so a `{ ... }` block used as a
+# top-level *expression* assigns to top-level names -- which are immutable
+# unless declared. This is what stops `prettyunits::format_time_ago`, which has
+# no `<<-` in it at all.
+blk <- { u <- 1 ; u }
+
+# Declaring the inner name with a value type fixes it, exactly as in (2).
+#| au : dbl
+ablk <- { au <- 1 ; au }
+
+# It does not carry over to an inner *function*, though, which is what
+# `format_time_ago` needs: a function signature stays immutable, and declaring
+# a regular type instead reaches the `SigTy` path, whose types may not have
+# type variables -- while every R closure infers one.
+#| afn : ((a:dbl1) -> dbl1)<>
+fblk <- local({ afn <- function(a) a + 1 ; list(h = afn) })
 
 # ---- (3) Elementwise functions need one overload per length class ----------
 # `nchar` is length-preserving, which the algebra cannot say, so base.R

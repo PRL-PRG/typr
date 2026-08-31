@@ -55,16 +55,33 @@ cache: {  }
 
 typr: skipping definition fill_cache (Invalid_argument("Cannot assign to an immutable variable."))
 
+acache: {  } | { a: dbl1 }
+
+fill_acache: (() -> null)<> with {  }
+
+.symbols: {  } | { tick: CHR1 }
+
+.onLoad: (libname: CHR1, pkgname: CHR1) -> null
+
+typr: skipping definition blk (Invalid_argument("Cannot assign to an immutable variable."))
+
+ablk: dbl
+
+fblk: Untypeable: untypeable coercion
+Line 103, characters 23-40
+expected: (a: dbl1) --> dbl1
+given: ((a: 'a & dbl) --> dbl) & ((a: 'a & dbl1) --> dbl1)
+
 nchar_of_scalar: (() -> INT1)<> with {  }
 
 three: (() -> CHR<>)<> with {  }
 
 unbound_alone: Untypeable: unbound variable
-Line 90, characters 29-41
+Line 121, characters 29-41
 name: undefined_fn
 
 unbound_after_call: Untypeable: unbound variable
-Line 91, characters 52-64
+Line 122, characters 52-64
 name: undefined_fn
 
 bound_after_call: ((x: vec) -> INT1<>)<> with {  }
@@ -74,10 +91,10 @@ defined_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 uses_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 mutual_b: Untypeable: unbound variable
-Line 101, characters 24-32
+Line 132, characters 24-32
 name: mutual_a
 
 mutual_a: Untypeable: unbound variable
-Line 100, characters 24-32
+Line 131, characters 24-32
 name: mutual_b
 
