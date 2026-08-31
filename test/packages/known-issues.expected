@@ -68,7 +68,7 @@ typr: skipping definition blk (Invalid_argument("Cannot assign to an immutable v
 ablk: dbl
 
 fblk: Untypeable: untypeable coercion
-Line 103, characters 23-40
+Line 110, characters 23-40
 expected: (a: dbl1) --> dbl1
 given: ((a: 'a & dbl) --> dbl) & ((a: 'a & dbl1) --> dbl1)
 
@@ -77,11 +77,11 @@ nchar_of_scalar: (() -> INT1)<> with {  }
 three: (() -> CHR<>)<> with {  }
 
 unbound_alone: Untypeable: unbound variable
-Line 121, characters 29-41
+Line 128, characters 29-41
 name: undefined_fn
 
 unbound_after_call: Untypeable: unbound variable
-Line 122, characters 52-64
+Line 129, characters 52-64
 name: undefined_fn
 
 bound_after_call: ((x: vec) -> INT1<>)<> with {  }
@@ -91,10 +91,10 @@ defined_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 uses_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 mutual_b: Untypeable: unbound variable
-Line 132, characters 24-32
+Line 139, characters 24-32
 name: mutual_a
 
 mutual_a: Untypeable: unbound variable
-Line 131, characters 24-32
+Line 138, characters 24-32
 name: mutual_b
 
