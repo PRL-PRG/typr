@@ -40,6 +40,19 @@ uses_dot_helper <- function() .dot_helper(1)
 uses_dot_global <- function() .Platform$OS.type
 uses_dot_machine <- function() .Machine$double.eps
 
+# ---- (0e) Operator names and dot-initial parameter labels -------------------
+# Fixed, in two separate lexers. Rsem's annotation lexer left `^` and `~` out
+# of the alphabet an operator name may use, so `#| (^) : ...` did not lex;
+# RSTT's *type* lexer rejected a label starting with a dot, so a signature
+# could not name R's conventional `.Data` / `.x` / `.f` parameters. base.R can
+# now declare `(^)` and `structure`, both of which it was missing.
+powered <- function(x) x^2
+structured <- function(x) structure(x, class = "foo")
+
+#| dot_labelled : (.Data: dbl, .f: chr) -> dbl
+dot_labelled <- function(.Data, .f) .Data
+uses_dot_labelled <- function() dot_labelled(.Data = 1, .f = "a")
+
 # ---- (1) `break` / `next` inside a `for` loop -------------------------------
 # Fixed. The loop was rejected with "Expression contains an orphan ret
 # expression" while the same loop written with `while` was accepted: MLsem's

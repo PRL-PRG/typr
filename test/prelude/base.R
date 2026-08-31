@@ -12,6 +12,8 @@
 #| (/) : ( e1:dbl, e2:dbl ) -> dbl
 #| (%%) : ( e1:dbl1, e2:dbl1 ) -> dbl1
 #| (%/%) : ( e1:dbl1, e2:dbl1 ) -> dbl1
+#| (^) : ( e1:dbl1, e2:dbl1 ) -> dbl1
+#| (^) : ( e1:dbl, e2:dbl ) -> dbl
 
 #| (<)  : ( e1:dbl1, e2:dbl1 ) -> lgl1<>
 #| (<)  : ( e1:dbl, e2:dbl ) -> lgl<>
@@ -138,6 +140,7 @@
 #| stopifnot : (...: any) -> null
 #| warning : (...: any) -> null
 #| identity : (x:'a) -> 'a
+#| structure : (.Data:'a, ...: any) -> 'a
 # Drawing one element gives a scalar; the size being a literal, the singleton
 # type of the argument is enough to say so.
 #| sample : (x:v('a), size:1.) -> v1('a)

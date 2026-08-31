@@ -33,6 +33,14 @@ uses_dot_global: (() -> CHR1)<> with {  }
 
 uses_dot_machine: (() -> DBL1)<> with {  }
 
+powered: (((x: dbl) -> dbl) & ((x: dbl1) -> dbl1))<> with {  }
+
+structured: ∀'a. ((x: 'a) -> 'a)<> with {  }
+
+dot_labelled: (.Data: dbl, .f: vec) -> dbl
+
+uses_dot_labelled: (() -> dbl)<> with {  }
+
 for_break: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 for_next: ∀'a. ((x: 'a) -> 'a)<> with {  }
@@ -52,11 +60,11 @@ nchar_of_scalar: (() -> INT1)<> with {  }
 three: (() -> CHR<>)<> with {  }
 
 unbound_alone: Untypeable: unbound variable
-Line 77, characters 29-41
+Line 90, characters 29-41
 name: undefined_fn
 
 unbound_after_call: Untypeable: unbound variable
-Line 78, characters 52-64
+Line 91, characters 52-64
 name: undefined_fn
 
 bound_after_call: ((x: vec) -> INT1<>)<> with {  }
@@ -66,10 +74,10 @@ defined_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 uses_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 mutual_b: Untypeable: unbound variable
-Line 88, characters 24-32
+Line 101, characters 24-32
 name: mutual_a
 
 mutual_a: Untypeable: unbound variable
-Line 87, characters 24-32
+Line 100, characters 24-32
 name: mutual_b
 
