@@ -6,10 +6,6 @@
 
 
 ===== prelude prelude/base.R =====
-platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
-
-.Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
-
 
 ===== packages/praise/R/adjective.R =====
 adjective: CHR<>

@@ -26,6 +26,20 @@ forward_dots <- function(x, ...) sub("a", "b", x, ...)
 #| annotated : (x: dbl) -> dbl
 annotated <- function(x) x
 
+# ---- (0d) Dot-prefixed names could not be annotated -------------------------
+# Fixed. The annotation lexer's identifiers started with a letter or `_`, so
+# `.Platform` and friends -- exactly the names a prelude needs -- could not be
+# written on the left of an annotation. base.R used to launder them through a
+# helper whose name was annotatable; it declares them directly now, and a
+# package's own dot-named definitions can be annotated too. Were the annotation
+# below not read, `.dot_helper` would infer the polymorphic `(x: 'a) -> 'a`.
+#| .dot_helper : (x: dbl) -> dbl
+.dot_helper <- function(x) x
+
+uses_dot_helper <- function() .dot_helper(1)
+uses_dot_global <- function() .Platform$OS.type
+uses_dot_machine <- function() .Machine$double.eps
+
 # ---- (1) `break` / `next` inside a `for` loop -------------------------------
 # Fixed. The loop was rejected with "Expression contains an orphan ret
 # expression" while the same loop written with `while` was accepted: MLsem's

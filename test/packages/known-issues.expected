@@ -6,10 +6,6 @@
 
 
 ===== prelude prelude/base.R =====
-platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
-
-.Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
-
 
 ===== packages/known-issues/R/issues.R =====
 na_lgl: (LGL1 \ ^LGL1)<> with {  }
@@ -28,6 +24,14 @@ forward_dots: (((x: vec) -> CHR) & ((x: vec1) -> CHR1) & (@(x: any, ...: (absent
  empty))<> with {  }
 
 annotated: (x: dbl) -> dbl
+
+.dot_helper: (x: dbl) -> dbl
+
+uses_dot_helper: (() -> dbl)<> with {  }
+
+uses_dot_global: (() -> CHR1)<> with {  }
+
+uses_dot_machine: (() -> DBL1)<> with {  }
 
 for_break: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
@@ -48,11 +52,11 @@ nchar_of_scalar: (() -> INT1)<> with {  }
 three: (() -> CHR<>)<> with {  }
 
 unbound_alone: Untypeable: unbound variable
-Line 63, characters 29-41
+Line 77, characters 29-41
 name: undefined_fn
 
 unbound_after_call: Untypeable: unbound variable
-Line 64, characters 52-64
+Line 78, characters 52-64
 name: undefined_fn
 
 bound_after_call: ((x: vec) -> INT1<>)<> with {  }
@@ -62,10 +66,10 @@ defined_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 uses_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 mutual_b: Untypeable: unbound variable
-Line 74, characters 24-32
+Line 88, characters 24-32
 name: mutual_a
 
 mutual_a: Untypeable: unbound variable
-Line 73, characters 24-32
+Line 87, characters 24-32
 name: mutual_b
 

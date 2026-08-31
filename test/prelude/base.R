@@ -130,13 +130,8 @@
 #| invisible : (x:'a?) -> 'a | null
 #| interactive : () -> lgl1<>
 
-# A dot-prefixed name cannot be written on the left of a `##` annotation (the
-# annotation lexer's identifiers start with a letter or `_`), so the base R
-# globals that have one are given a type by defining them through a helper
-# whose name *is* annotatable.
-#| platform_ : () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
-platform_ <- function() list(OS.type = "unix", file.sep = "/", path.sep = ":", GUI = "X11")
-.Platform <- platform_()
+#| .Platform : { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+#| .Machine : { integer.max: INT1, double.eps: DBL1, double.xmax: DBL1, any }
 
 # ========== Control ==========
 #| stop : (...: any) -> empty
