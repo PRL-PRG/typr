@@ -8,6 +8,14 @@ na_cplx <- NA_complex_
 na_chr  <- NA_character_
 nan     <- NaN
 
+# ---- (0b) Forwarding `...` to an overloaded function ------------------------
+# Fixed. The inferred type used to be unprintable: a def-site argument is
+# represented as the union of the ways its parameters split between positional
+# and named, and intersecting it here removes the fully-positional atom the
+# printer recovers the signature from. The remaining atoms are now read as
+# call-sites instead of dropped.
+forward_dots <- function(x, ...) sub("a", "b", x, ...)
+
 # ---- (1) `break` / `next` inside a `for` loop -------------------------------
 # Rejected with "Expression contains an orphan ret expression"; the same loop
 # written with `while` is accepted, so it is the `for` lowering that is at

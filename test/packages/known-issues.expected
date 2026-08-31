@@ -24,6 +24,9 @@ na_chr: na_string<> with {  }
 
 nan: DBL1<> with {  }
 
+forward_dots: (((x: vec) -> CHR) & ((x: vec1) -> CHR1) & (@(x: any, ...: (absent, any)) ->
+ empty))<> with {  }
+
 typr: skipping definition for_break (Invalid_argument("Expression contains an orphan ret expression."))
 
 typr: skipping definition for_next (Invalid_argument("Expression contains an orphan ret expression."))
@@ -43,10 +46,10 @@ defined_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 uses_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 mutual_b: Untypeable: unbound variable
-Line 43, characters 24-32
+Line 51, characters 24-32
 name: mutual_a
 
 mutual_a: Untypeable: unbound variable
-Line 42, characters 24-32
+Line 50, characters 24-32
 name: mutual_b
 

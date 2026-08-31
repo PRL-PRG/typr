@@ -16,7 +16,10 @@ typr: skipping annotation ## Full matches (R_types__IO.SyntaxError(_, "syntax er
 
 _: null
 
-re_match: (typr: skipping definition re_match (Invalid_argument("N-ary operator cannot be empty"))
+re_match: (@(text: vec, pattern: CHR, ...: (absent, any)) |
+ @(text: vec, pattern: clx, ...: (absent, any)) |
+ @(CHR, text: vec, ...: (absent, any)) |
+ @(clx, text: vec, ...: (absent, any)) -> empty)<> with {  }
 
 re_match_all1: Untypeable: untypeable encoding
 Line 110, characters 15-42
