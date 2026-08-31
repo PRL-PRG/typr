@@ -1,0 +1,31 @@
+
+===== Native code =====
+
+
+===== R code =====
+
+
+===== prelude prelude/base.R =====
+platform_: () -> { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+.Platform: { OS.type: CHR1, file.sep: CHR1, path.sep: CHR1, GUI: CHR1, any }
+
+
+===== packages/rematch/R/package.R =====
+typr: skipping annotation ## Full matches (R_types__IO.SyntaxError(_, "syntax error"))
+
+_: null
+
+re_match: (@(text: vec, pattern: CHR, ...: (absent, any)) |
+ @(text: vec, pattern: clx, ...: (absent, any)) |
+ @(CHR, text: vec, ...: (absent, any)) |
+ @(clx, text: vec, ...: (absent, any)) -> empty)<> with {  }
+
+re_match_all1: ((match: any with { match.length: any, capture.start: dbl, capture.length: dbl, capture.names: vec, any }, text: vec)
+ |
+ (match: any with { match.length: any, capture.start: null, capture.length: any, capture.names: vec, any }, text: any)
+ -> any)<> with {  }
+
+re_match_all: ((pattern: CHR, text: vec, ...: any) | (pattern: clx, text: vec, ...: any)
+ -> any)<> with {  }
+

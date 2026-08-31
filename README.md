@@ -58,7 +58,18 @@ dune exec typr -- --prelude base.R path/to/package
 
 # Give up on any function that takes longer than 10s, and carry on
 dune exec typr -- --timeout 10 path/to/package
+
+# Tolerate the names the prelude does not declare, instead of reporting them
+dune exec typr -- --gradual path/to/package
 ```
+
+`--gradual` gives the `dyn` type to the R names nothing binds. A prelude is
+never complete, and one undeclared callee is enough to make a whole function
+untypeable, so on a real package this is usually what you want for a first
+pass: the domains still get inferred where the default run gives up entirely.
+It is off by default, since a name nothing binds is worth knowing about. Only
+the R side has the choice -- NativeSem already types the C identifiers it
+cannot resolve this way.
 
 `--timeout` bounds the type-checking of a *single* function, on both sides and
 through the same code (`lib/timeout.ml`), since TypR drives both checkers

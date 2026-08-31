@@ -57,6 +57,26 @@
  (action
   (diff packages/rematch.expected rematch.output)))
 
+; The same package again with --gradual, which gives the names nothing binds
+; the `dyn` type instead of reporting them: the domains still get inferred
+; where the default run gives up entirely.
+(rule
+ (alias runtest)
+ (deps
+  (glob_files %{project_root}/types/*.ty)
+  prelude/base.R
+  (source_tree packages/rematch))
+ (action
+  (with-stdout-to
+   rematch-gradual.output
+   (run %{exe:../bin/main.exe} --gradual --prelude prelude/base.R packages/rematch))))
+
+(rule
+ (alias runtest)
+ (deps packages/rematch-gradual.expected rematch-gradual.output)
+ (action
+  (diff packages/rematch-gradual.expected rematch-gradual.output)))
+
 (rule
  (alias runtest)
  (deps

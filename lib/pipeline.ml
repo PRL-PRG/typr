@@ -20,6 +20,10 @@ type options = {
   (* Wall-clock limit on type-checking a single function. Applies to both
      sides: it overrides [native.timeout] when set. *)
   timeout : float option ;
+  (* Give the [dyn] type to the R names nothing binds, instead of reporting
+     them. Off by default. Only the R side has the choice: NativeSem already
+     types the C identifiers it cannot resolve this way. *)
+  gradual : bool ;
   (* Print the dependency information instead of type-checking. *)
   deps_only : bool ;
 }
@@ -32,7 +36,7 @@ let default_native_options : R_c_typing.Runner.cmd_options = {
 
 let default_options =
   { native = default_native_options ; prelude = [] ; include_dirs = [] ;
-    timeout = None ; deps_only = false }
+    timeout = None ; gradual = false ; deps_only = false }
 
 (* NativeSem has a per-function timeout of its own, for when it is used as a
    standalone CLI. Driven from here the policy comes from [Timeout.guard]
@@ -387,6 +391,7 @@ let report_deps opts (pkg : Pkg.t) entry_points files =
           (String.concat ", " calls))
 
 let run opts root =
+  Driver.gradual := opts.gradual ;
   let pkg = Pkg.scan root in
   let files = List.filter_map parse_r pkg.r_files in
   let files = order_r_files files in

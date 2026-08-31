@@ -1,6 +1,8 @@
-let usage = "typr [--deps] [--debug] [--timeout SECONDS] <package-directory>"
+let usage =
+  "typr [--deps] [--gradual] [--debug] [--timeout SECONDS] [--prelude FILE]\n\      [-I DIR] <package-directory>"
 
 let deps_only = ref false
+let gradual = ref false
 let debug = ref false
 let timeout = ref None
 let include_dirs = ref []
@@ -11,6 +13,8 @@ let speclist =
   [ ("--deps", Arg.Set deps_only,
      "Only report the dependencies between R and native functions") ;
     ("--debug", Arg.Set debug, "Print intermediate information") ;
+    ("--gradual", Arg.Set gradual,
+     "Give the dyn type to the R names nothing binds, instead of reporting them") ;
     ("--timeout", Arg.Float (fun f -> timeout := Some f),
      "SECONDS  Give up on a function whose type-checking takes longer") ;
     ("-I", Arg.String (fun d -> include_dirs := !include_dirs @ [d]),
@@ -32,4 +36,4 @@ let () =
     let native = { Typr.Pipeline.default_native_options with debug = !debug } in
     Typr.Pipeline.run
       { native ; prelude = !prelude ; include_dirs = !include_dirs ;
-        timeout = !timeout ; deps_only = !deps_only } root
+        timeout = !timeout ; gradual = !gradual ; deps_only = !deps_only } root

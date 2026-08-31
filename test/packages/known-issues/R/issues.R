@@ -41,6 +41,15 @@ nchar_of_scalar <- function() nchar("abc")
 # "some character vector", so an out-of-range index cannot be rejected.
 three <- function() c("a", "b", "c")
 
+# ---- (4b) An unbound name reported against an unrelated call ---------------
+# Alone, an unbound callee is reported as such. Put a successful application
+# before it and the error moves onto that application instead, with the
+# parameter shown unrefined -- the unbound name is never mentioned. The same
+# body types when the second callee is bound.
+unbound_alone <- function(x) undefined_fn(x)
+unbound_after_call <- function(x) { y <- nchar(x) ; undefined_fn(y) }
+bound_after_call <- function(x) { y <- nchar(x) ; length(y) }
+
 # ---- (5) A function used before it is defined, in the same file ------------
 # TypR reorders these, so this pair type-checks; mutual recursion below does
 # not, no order being able to satisfy it.

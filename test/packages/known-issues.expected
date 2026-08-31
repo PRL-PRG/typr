@@ -41,15 +41,26 @@ nchar_of_scalar: (() -> INT1)<> with {  }
 
 three: (() -> CHR<>)<> with {  }
 
+unbound_alone: Untypeable: unbound variable
+Line 49, characters 29-41
+name: undefined_fn
+
+unbound_after_call: Untypeable: untypeable encoding
+Line 50, characters 41-49
+application of nchar failed
+argument is of type @('x)
+
+bound_after_call: ((x: vec) -> INT1<>)<> with {  }
+
 defined_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 uses_later: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 mutual_b: Untypeable: unbound variable
-Line 51, characters 24-32
+Line 60, characters 24-32
 name: mutual_a
 
 mutual_a: Untypeable: unbound variable
-Line 50, characters 24-32
+Line 59, characters 24-32
 name: mutual_b
 
