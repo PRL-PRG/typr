@@ -152,3 +152,14 @@ defined_later <- function(x) x
 
 mutual_a <- function(x) mutual_b(x)
 mutual_b <- function(x) mutual_a(x)
+
+# ---- (6) A failing application blamed on the wrong call -- fixed ------------
+# The reported culprit used to be the *first* application in the body rather
+# than the one that failed, with its argument shown unrefined -- `nchar` here,
+# `@('x)`. An `Alt` logged its encoding error when it ran out of alternatives,
+# which can be long after the sub-expression actually failed, and the late log
+# won. MLsem 4557d7b records it at the point of failure instead, so each of
+# these now names `toupper` (or the over-applied `nchar`) with a real argument.
+blame_second <- function(x) { y <- nchar(x) ; toupper(list(1)) }
+blame_branch <- function(x) { y <- nchar(x) ; if (x > 0) toupper(list(1)) else x }
+blame_arity  <- function(x) { y <- nchar(x) ; nchar(x, x, x, x) }
