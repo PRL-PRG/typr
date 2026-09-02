@@ -138,3 +138,14 @@ Line 165, characters 46-63
 application of nchar failed
 argument is of type @('x & vec, 'x & vec, 'x & vec, 'x & vec)
 
+cb_ty: Untypeable: untypeable coercion
+Line 176, characters 9-26
+expected: (a: dbl1) --> dbl1
+given: ((a: 'a & dbl) --> dbl) & ((a: 'a & dbl1) --> dbl1)
+
+cb_sig: (a: dbl1) -> dbl1
+
+typr: skipping definition set_cb_sig (Invalid_argument("Cannot assign to an immutable variable."))
+
+holder: { reset: (() -> null)<> with {  } }
+

@@ -163,3 +163,24 @@ mutual_b <- function(x) mutual_a(x)
 blame_second <- function(x) { y <- nchar(x) ; toupper(list(1)) }
 blame_branch <- function(x) { y <- nchar(x) ; if (x > 0) toupper(list(1)) else x }
 blame_arity  <- function(x) { y <- nchar(x) ; nchar(x, x, x, x) }
+
+# ---- (7) A mutable top-level binding holding a function --------------------
+# The one shape B2's annotation does not cover. A signature makes the binding
+# immutable, so the superassignment is rejected; a regular type makes it
+# mutable but cannot express an R closure, the coercion failing on the identity
+# of the def-site argument (`Arg.mk` stamps a fresh constant into each one, and
+# the type parser builds only that form). Inside a `local` block the name is an
+# ordinary scoped local, mutable and annotated through the local path, so the
+# same callback idiom works there.
+#| cb_ty : ((a:dbl1) -> dbl1)<>
+cb_ty <- function(a) a + 1
+
+#| cb_sig : (a:dbl1) -> dbl1
+cb_sig <- function(a) a + 1
+set_cb_sig <- function() { cb_sig <<- function(a) a + 2 ; invisible() }
+
+holder <- local({
+  #| cb_loc : (a:dbl1) -> dbl1
+  cb_loc <- function(a) a + 1
+  list(reset = function() { cb_loc <<- function(a) a + 2 ; invisible() })
+})
