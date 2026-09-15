@@ -49,8 +49,7 @@
 
 # ========== Vectors and lists ==========
 #| c : ( ...: v('p) ) -> v('p)<>
-#| list : ( ...: 'a ) -> { 'a }
-#| list : ( ...: `r ) -> { `r }
+#| list : (( #l_i : 'a_i )_i, ...: 'a ) -> { ( #l_i : 'a_i )_i, 'a }
 #| length : (x:any) -> INT1<>
 #| rev : (x:v('a)) -> v('a)
 #| unlist : (x:{v('a)}) -> v('a)
