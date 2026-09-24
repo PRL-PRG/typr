@@ -1,0 +1,6 @@
+; The base R signatures TypR type-checks packages against. Installed so that
+; the image (and anyone with `typr` in their switch) can point --prelude at it.
+(install
+ (section share)
+ (package typr)
+ (files base.R))

@@ -23,6 +23,14 @@
 ; Real CRAN packages (and one synthetic package of minimal reproductions),
 ; type-checked against the base R signatures of `prelude/base.R`. See
 ; ../docs/r-experiment-report.md for what each of them exercises.
+; The prelude lives at the project root (it is installed with typr); it is
+; copied here so that the rules below, and the `===== prelude prelude/base.R`
+; banner in the five .expected files, are unchanged.
+(subdir
+ prelude
+ (copy_files
+  (files %{project_root}/prelude/base.R)))
+
 (rule
  (alias runtest)
  (deps
