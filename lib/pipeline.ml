@@ -203,6 +203,20 @@ let with_void_ty ty f =
   Mlsem.Lang.Config.void_ty := ty ;
   Fun.protect ~finally:(fun () -> Mlsem.Lang.Config.void_ty := saved) f
 
+(* Same story for mlsem's substitution-normalization hook. Both checkers set
+   it: Rsem in [Driver.setup] (which [bin/main.ml] calls first, so it wins the
+   whole process), NativeSem at module initialisation. They used to agree; they
+   no longer do -- NativeSem's rule is per variable, because bare primitives
+   (CHARSXPs) exist only at the C level and rstt's whole-component rule erases
+   their content. So the native phase must run under NativeSem's hook, and the
+   R phase under Rsem's, or the native types TypR links differ from what
+   NativeSem itself infers. *)
+let with_native_hooks f =
+  let saved = !Mlsem.System.Config.subst_normalization_fun in
+  Mlsem.System.Config.subst_normalization_fun := R_c_typing.Runner.subst_normalization ;
+  Fun.protect
+    ~finally:(fun () -> Mlsem.System.Config.subst_normalization_fun := saved) f
+
 (* Where the C preprocessor looks for the headers a package includes. *)
 let setup_include_dirs include_dirs =
   let env_dirs =
@@ -336,8 +350,8 @@ let run_native opts (pkg : Pkg.t) entry_points =
       (idenv, env)
     in
     let (idenv, env), penv =
-      with_void_ty Mlsem.Types.Ty.unit (fun () ->
-        Mlsem.Types.PEnv.sequential_handler R_c_typing.Defs.parsed_types_penv run ())
+      with_void_ty Mlsem.Types.Ty.unit (fun () -> with_native_hooks (fun () ->
+        Mlsem.Types.PEnv.sequential_handler R_c_typing.Defs.parsed_types_penv run ()))
     in
     let lookup name =
       Runner.find_existing_binding name idenv env
