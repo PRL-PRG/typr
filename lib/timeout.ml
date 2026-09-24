@@ -33,11 +33,11 @@ let call seconds f x =
    NativeSem's [guard] hook expects, and what the R side uses too, so a
    function that takes too long is reported the same way whichever language it
    is written in. [None] means no limit. *)
-let guard seconds ~name ~unchanged f =
+let guard' seconds ~name ~unchanged f =
   match seconds with
-  | None -> f ()
+  | None -> (f (), false)
   | Some seconds ->
-    (try call seconds f () with
+    (try (call seconds f (), false) with
      | Elapsed seconds ->
        (* The alarm can fire while the checker is half-way through printing
           its own result. Flush first, so that what it had already produced
@@ -45,4 +45,8 @@ let guard seconds ~name ~unchanged f =
        Format.print_flush () ;
        Format.printf "%s:@.timeout: inference/checking exceeded %.6g seconds@.@."
          name seconds ;
-       unchanged)
+       (unchanged, true))
+
+(* [guard'] also says whether the limit fired: the report needs to tell a
+   definition that ran out of time from one that was left untouched. *)
+let guard seconds ~name ~unchanged f = fst (guard' seconds ~name ~unchanged f)

@@ -61,7 +61,27 @@ dune exec typr -- --timeout 10 path/to/package
 
 # Tolerate the names the prelude does not declare, instead of reporting them
 dune exec typr -- --gradual path/to/package
+
+# Also write a machine-readable account of the run, one JSON record per line
+dune exec typr -- --report run.jsonl path/to/package
+
+# NativeSem options passed through: bind a C function that fails to type at
+# its declared signature; print its per-function timings; dump its call graph
+dune exec typr -- --fallback-c-signature --log-times --call-graph cg.dot path/to/package
 ```
+
+`--report FILE` is what the [r-typing](https://github.com/PRL-PRG/r-typing)
+dashboard consumes. The file is JSONL -- one flat record per line, flushed as
+it is written, so a run killed half-way still leaves everything up to that
+point -- with a `"k"` field naming the record: `run`, `file`, `entry_point`,
+`native_def`, `link`, `r_def`, `annotation_error`, `phase`, `summary`, and
+`crash` when the run died from the inside. A `native_def` comes from
+NativeSem's `Runner.on_outcome` hook; an `r_def` from what Rsem did (whether
+the name ended up typed, whether the time limit fired) plus the block it
+printed for an error, which is captured per definition and re-emitted, so the
+text output is unchanged by `--report`. Every number the dashboard shows is
+recomputed from the individual records; `summary` only says whether the run
+completed.
 
 `--gradual` gives the `dyn` type to the R names nothing binds. A prelude is
 never complete, and one undeclared callee is enough to make a whole function
