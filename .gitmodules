@@ -9,4 +9,4 @@
 [submodule "nativesem"]
 	path = nativesem
 	url = https://github.com/programLyrique/nativesem
-	branch = new-algebra
+	branch = main
