@@ -17,5 +17,5 @@
   "Parses an R package (R sources and native C sources), resolves the\
  \n dependencies between their functions, and drives Rsem and NativeSem\
  \n accordingly.")
- (depends (ocaml (>= 5.3.0)) dune rsem r-c-typing rstt mlsem)
+ (depends (ocaml (>= 5.3.0)) dune rsem r-c-typing rstt mlsem (yojson (>= 2.0)))
  (tags ("R" "types" "C")))

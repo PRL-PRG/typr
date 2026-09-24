@@ -35,22 +35,39 @@ let arg_of_tuple dom =
 
 let fun_ty = Arrow.any |> Rstt.Attr.mk_content
 
-(* [r_type_of_native ty] is the type of the R binding that stands for a native
-   routine whose inferred type is [ty]. [None] when [ty] is not a function type
-   (e.g. inference failed and left a global). *)
-let r_type_of_native ty =
+(* Why a native routine gets no R binding. [No_native_type] is decided by the
+   caller (nothing was inferred at all); the other three are decided here. *)
+type reject =
+  | No_native_type          (* NativeSem produced no type for the symbol *)
+  | Empty_native_type       (* it produced [empty] *)
+  | Not_a_function          (* a global, or inference left a non-arrow *)
+  | Empty_after_conversion  (* every arrow's domain had no R counterpart *)
+
+let string_of_reject = function
+  | No_native_type -> "no native type"
+  | Empty_native_type -> "empty native type"
+  | Not_a_function -> "not a function type"
+  | Empty_after_conversion -> "empty after conversion"
+
+(* [r_type_of_native' ty] is the type of the R binding that stands for a native
+   routine whose inferred type is [ty], or the reason there is none. *)
+let r_type_of_native' ty =
   (* A routine inferred from its body carries R attributes ([... -> ...]);
      one typed from its C signature does not ([... --> ...]). *)
   let content =
     if Ty.leq ty (Rstt.Attr.any) then Rstt.Attr.proj_content ty else ty in
-  if Ty.is_empty content || not (Ty.leq content Arrow.any) then None
+  if Ty.is_empty content then Error Empty_native_type
+  else if not (Ty.leq content Arrow.any) then Error Not_a_function
   else
     let arrows =
       Arrow.dnf content
       |> List.map (List.map (fun (dom, codom) -> (arg_of_tuple dom, codom)))
       |> Arrow.of_dnf
     in
-    if Ty.is_empty arrows then None else Some (Rstt.Attr.mk_content arrows)
+    if Ty.is_empty arrows then Error Empty_after_conversion
+    else Ok (Rstt.Attr.mk_content arrows)
+
+let r_type_of_native ty = Result.to_option (r_type_of_native' ty)
 
 let is_fun_ty ty = Ty.leq ty fun_ty && not (Ty.is_empty ty)
 

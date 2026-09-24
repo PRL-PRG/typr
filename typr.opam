@@ -18,6 +18,7 @@ depends: [
   "r-c-typing"
   "rstt"
   "mlsem"
+  "yojson" {>= "2.0"}
   "odoc" {with-doc}
 ]
 build: [
