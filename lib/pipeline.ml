@@ -244,7 +244,10 @@ let process_r_file ?timeout rep ~role ~defined ~native_syms ctx f =
             ("exn", R.S (Printexc.to_string e)) ] ;
         ctx) ctx f.extras
   in
-  let items = List.combine f.prog (R_deps.defs_of_program f.prog) in
+  (* [f.defs] was computed at parse time: [f.prog] may since have had its
+     [.Call]s rewritten (see [Link.rewrite_native_calls]), which would hide
+     the native calls each definition makes. *)
+  let items = List.combine f.prog f.defs in
   let package = role = "package" in
   List.fold_left (fun ctx (past, (def : R_deps.def)) ->
     let name = Driver.toplevel_name past |> Option.value ~default:"<statement>" in
