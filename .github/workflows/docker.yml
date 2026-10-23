@@ -1,0 +1,111 @@
+name: Docker
+
+# Two kinds of build. A push to main builds the submodules at their PINNED
+# SHAs: reproducible, and what typr's own tests were run against. A dependency
+# update (dispatched by nativesem), the weekly schedule, or a manual run with
+# `unpinned` refresh every submodule to the tip of its branch first: what the
+# dashboard needs to track progress in Rsem, NativeSem and rstt. Both kinds
+# tag `latest`; only pinned builds move the `pinned` tag, so r-typing can be
+# pointed back at reproducible builds in one line. The image records which
+# kind it is.
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [dependency-updated]
+  workflow_dispatch:
+    inputs:
+      unpinned:
+        description: "Refresh the submodules to their branch tips before building"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 3 * * 1"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # required to push to ghcr.io
+
+    steps:
+      # .gitmodules declares a branch per submodule over public HTTPS: no token.
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Refresh submodules to their branch tips (unpinned builds)
+        id: pins
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ] || \
+             [ "${{ github.event_name }}" = "schedule" ] || \
+             [ "${{ github.event.inputs.unpinned }}" = "true" ]; then
+            git submodule update --remote --recursive
+            echo "pinned=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "pinned=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve the four commits
+        id: shas
+        run: |
+          echo "typr=$(git rev-parse HEAD)"                >> "$GITHUB_OUTPUT"
+          echo "rsem=$(git -C Rsem rev-parse HEAD)"        >> "$GITHUB_OUTPUT"
+          echo "nativesem=$(git -C nativesem rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "rstt=$(git -C rstt rev-parse HEAD)"        >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # metadata-action lowercases the image name, which ghcr.io requires.
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/typr
+          tags: |
+            type=raw,value=latest
+            type=raw,value=pinned,enable=${{ steps.pins.outputs.pinned == 'true' }}
+            type=sha,prefix=sha-
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            TYPR_SHA=${{ steps.shas.outputs.typr }}
+            RSEM_SHA=${{ steps.shas.outputs.rsem }}
+            NATIVESEM_SHA=${{ steps.shas.outputs.nativesem }}
+            RSTT_SHA=${{ steps.shas.outputs.rstt }}
+            PINNED=${{ steps.pins.outputs.pinned }}
+            SUBJECT=${{ github.event_name }}
+
+      # Notify r-typing so it reruns the pipeline. Needs a PAT with `workflow`
+      # scope on PRL-PRG/r-typing stored here as PIPELINE_DISPATCH_TOKEN; until
+      # it exists this step fails without failing the build.
+      - name: Trigger r-typing pipeline
+        uses: peter-evans/repository-dispatch@v4
+        continue-on-error: true
+        with:
+          token: ${{ secrets.PIPELINE_DISPATCH_TOKEN }}
+          repository: PRL-PRG/r-typing
+          event-type: typr-updated
+          client-payload: >-
+            {"typr":"${{ steps.shas.outputs.typr }}",
+             "rsem":"${{ steps.shas.outputs.rsem }}",
+             "nativesem":"${{ steps.shas.outputs.nativesem }}",
+             "rstt":"${{ steps.shas.outputs.rstt }}",
+             "pinned":${{ steps.pins.outputs.pinned }}}

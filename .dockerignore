@@ -1,0 +1,11 @@
+# Build inputs only: the workspace sources and the three submodules.
+# Rsem/, nativesem/, rstt/ must stay -- types/dune copies nativesem/types/*.ty,
+# and all three are built in-workspace.
+.git
+.github
+_build
+**/_build
+docs
+test/packages
+nativesem/mlsem_recording.json
+nativesem/_coverage
