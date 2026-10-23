@@ -96,6 +96,12 @@ let topo_sort nodes deps =
   List.iter visit nodes ;
   List.rev !out
 
+(* The callees of a native function that are scheduled themselves. [calls] also
+   names functions defined in included headers (see {!C_deps.fun_names}),
+   which are never scheduled and have no entry in [by_name]. *)
+let own_calls by_name (d : C_deps.fundef) =
+  List.filter (fun c -> StrMap.mem c by_name) d.calls
+
 (* ===== R side ===== *)
 
 type r_file = {
@@ -539,7 +545,7 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
       let by_name = defs |> List.map (fun (d : C_deps.fundef) -> (d.name, d)) |> StrMap.of_list in
       let ordered =
         topo_sort (List.map (fun (d : C_deps.fundef) -> d.name) defs)
-          (fun n -> (StrMap.find n by_name).calls)
+          (fun n -> own_calls by_name (StrMap.find n by_name))
         |> List.map (fun n -> StrMap.find n by_name)
       in
       Hashtbl.replace rep.stats "native_n_functions" (List.length ordered) ;
@@ -620,7 +626,7 @@ let report_deps opts (pkg : Pkg.t) entry_points files =
     C_deps.fundefs ~fun_names pasts |> C_deps.reachable ~roots:(List.map fst entry_points) in
   let by_name = defs |> List.map (fun (d : C_deps.fundef) -> (d.name, d)) |> StrMap.of_list in
   topo_sort (List.map (fun (d : C_deps.fundef) -> d.name) defs)
-    (fun n -> (StrMap.find n by_name).calls)
+    (fun n -> own_calls by_name (StrMap.find n by_name))
   |> List.iter (fun n ->
       let d = StrMap.find n by_name in
       match d.calls with
