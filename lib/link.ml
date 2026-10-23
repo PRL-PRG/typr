@@ -104,8 +104,9 @@ let rewrite_native_calls known (prog : PAst.t) : PAst.t =
       | PAst.Ite (e, e1, e2) -> PAst.Ite (aux e, aux e1, Option.map aux e2)
       | PAst.While (e1, e2) -> PAst.While (aux e1, aux e2)
       | PAst.For (i, e1, e2) -> PAst.For (i, aux e1, aux e2)
+      | PAst.Repeat e -> PAst.Repeat (aux e)
       | PAst.Braced es -> PAst.Braced (List.map aux es)
-      | (PAst.Const _ | PAst.Id _ | PAst.Dots | PAst.DotsN _
+      | (PAst.Const _ | PAst.Id _ | PAst.Ns _ | PAst.Dots | PAst.DotsN _
         | PAst.Return | PAst.Break | PAst.Next) as e -> e
     in
     (pos, e)

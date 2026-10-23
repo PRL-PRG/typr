@@ -36,6 +36,9 @@ let scan_e e =
   let rec aux (_, e) =
     match e with
     | PAst.Id str -> add_id str
+    (* [pkg::name] may name one of the package's own definitions: keep the
+       edge, in line with the over-approximation above. *)
+    | PAst.Ns (_, str) -> add_id str
     | PAst.Const _ | PAst.Dots | PAst.DotsN _
     | PAst.Return | PAst.Break | PAst.Next -> ()
     | PAst.Unop (str, e) -> add_id str ; aux e
@@ -58,6 +61,7 @@ let scan_e e =
       aux e
     | PAst.Ite (e, e1, e2) -> aux e ; aux e1 ; Option.iter aux e2
     | PAst.While (e1, e2) | PAst.For (_, e1, e2) -> aux e1 ; aux e2
+    | PAst.Repeat e -> aux e
     | PAst.Braced es -> List.iter aux es
   and aux_args args =
     args |> List.iter (function
