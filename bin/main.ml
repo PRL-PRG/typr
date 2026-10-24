@@ -1,6 +1,7 @@
 let usage =
   "typr [--deps] [--gradual] [--debug] [--timeout SECONDS] [--prelude FILE]\n\
-  \      [--report FILE] [--fallback-c-signature] [--log-times] [--call-graph FILE]\n\
+  \      [--report FILE] [--fallback-c-signature] [--lambda-rec SECONDS] [--log-times]\n\
+  \      [--call-graph FILE]\n\
   \      [-I DIR] <package-directory>"
 
 let deps_only = ref false
@@ -12,6 +13,7 @@ let prelude = ref []
 let report = ref None
 let fallback = ref false
 let log_times = ref false
+let lambda_rec = ref None
 let call_graph = ref None
 let root = ref None
 
@@ -31,6 +33,8 @@ let speclist =
      "FILE  Write a machine-readable account of the run (one JSON record per line)") ;
     ("--fallback-c-signature", Arg.Set fallback,
      "Bind a native function that fails to type at its declared C signature") ;
+    ("--lambda-rec", Arg.Float (fun f -> lambda_rec := Some f),
+     "SECONDS  Also type recursive native functions as recursive groups, within that time") ;
     ("--log-times", Arg.Set log_times,
      "Print NativeSem's per-function timing lines (the report has them regardless)") ;
     ("--call-graph", Arg.String (fun f -> call_graph := Some f),
@@ -50,6 +54,7 @@ let () =
     let native =
       { Typr.Pipeline.default_native_options with
         debug = !debug ; fallback_c_signature = !fallback ; log_times = !log_times ;
+        lambda_rec = !lambda_rec ;
         call_graph = !call_graph } in
     Typr.Pipeline.run
       { native ; prelude = !prelude ; include_dirs = !include_dirs ;

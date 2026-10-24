@@ -36,6 +36,7 @@ let default_native_options : R_c_typing.Runner.cmd_options = {
   cst = false ; past = false ; ast = false ; mlsem = false ; typing = true ;
   debug = false ; filter = None ; timeout = None ;
   fallback_c_signature = false ; call_graph = None ; log_times = false ;
+  lambda_rec = None ;
 }
 
 let default_options =
