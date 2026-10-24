@@ -102,6 +102,26 @@ let topo_sort nodes deps =
 let own_calls by_name (d : C_deps.fundef) =
   List.filter (fun c -> StrMap.mem c by_name) d.calls
 
+(* [defs] callees first. A function-like macro and a function of the same name
+   are both scheduled, the function first: a macro over a same-named function
+   ([#define f(x) (f)(x, 0)]) calls it. Calls name definitions, not
+   namespaces, so dependencies are between names. *)
+let schedule (defs : C_deps.fundef list) =
+  let by_name =
+    List.fold_left (fun m (d : C_deps.fundef) ->
+        StrMap.update d.name (fun l -> Some (Option.value ~default:[] l @ [ d ])) m)
+      StrMap.empty defs in
+  let defs_of n =
+    StrMap.find n by_name
+    |> List.stable_sort (fun (a : C_deps.fundef) (b : C_deps.fundef) -> compare a.macro b.macro) in
+  (* Names in source order, each once. *)
+  let names =
+    let seen = Hashtbl.create 64 in
+    List.filter_map (fun (d : C_deps.fundef) ->
+        if Hashtbl.mem seen d.name then None else (Hashtbl.add seen d.name () ; Some d.name)) defs in
+  topo_sort names (fun n -> List.concat_map (own_calls by_name) (defs_of n))
+  |> List.concat_map defs_of
+
 (* ===== R side ===== *)
 
 type r_file = {
@@ -388,7 +408,7 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
   else
     let module Runner = R_c_typing.Runner in
     let module PAst = R_c_typing.PAst in
-    let module NStrMap = Runner.StrMap in
+    let module Idenv = Runner.Idenv in
     let opts_native = native_options opts in
     let visible _ = true in
     let conventions = StrMap.of_list entry_points in
@@ -418,7 +438,7 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
           | (e, Rn.Internal m) -> Some (e, "internal", m, None)
           | _ -> None) outs in
       let status, hdr, ty, err, elapsed =
-        if timed_out then ("timeout", None, None, None, wall)
+        if timed_out then ("timeout", None, Option.map snd fallback, None, wall)
         else match typed, fallback, failure with
           | Some (e, h, tys), _, _ -> ("typed", Some (header h), Some tys, None, e)
           | None, Some (e, tys), f ->
@@ -514,10 +534,10 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
             let t0 = Unix.gettimeofday () in
             let result =
               match item with
-              | _, PAst.Fundef _ -> (idenv, env, decl, file_idenvs)
+              | _, (PAst.Fundef _ | PAst.MacroDef _) -> (idenv, env, decl, file_idenvs)
               | _ when internal ->
                 let own =
-                  StrMap.find_opt file file_idenvs |> Option.value ~default:NStrMap.empty in
+                  StrMap.find_opt file file_idenvs |> Option.value ~default:Idenv.empty in
                 let own, env, decl =
                   Runner.infer_def ~internal_scope:file ~force_internal_global:true
                     visible opts_native (own, env, decl) item
@@ -535,7 +555,7 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
                 ~wall:(Unix.gettimeofday () -. t0)) ;
             result)
             acc past)
-          (NStrMap.empty, R_c_typing.Defs.initial_env, decl, StrMap.empty) pasts
+          (Idenv.empty, R_c_typing.Defs.initial_env, decl, StrMap.empty) pasts
       in
 
       (* The function definitions, callees first, restricted to what the entry
@@ -545,20 +565,15 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
         C_deps.fundefs ~fun_names pasts
         |> C_deps.reachable ~roots:(List.map fst entry_points)
       in
-      let by_name = defs |> List.map (fun (d : C_deps.fundef) -> (d.name, d)) |> StrMap.of_list in
-      let ordered =
-        topo_sort (List.map (fun (d : C_deps.fundef) -> d.name) defs)
-          (fun n -> own_calls by_name (StrMap.find n by_name))
-        |> List.map (fun n -> StrMap.find n by_name)
-      in
+      let ordered = schedule defs in
       Hashtbl.replace rep.stats "native_n_functions" (List.length ordered) ;
       let t0 = Unix.gettimeofday () in
       let idenv, env, _ =
         List.fold_left (fun (idenv, env, decl) (d : C_deps.fundef) ->
           let own =
-            StrMap.find_opt d.file file_idenvs |> Option.value ~default:NStrMap.empty in
+            StrMap.find_opt d.file file_idenvs |> Option.value ~default:Idenv.empty in
           let unchanged =
-            (NStrMap.union (fun _ local _global -> Some local) own idenv, env, decl) in
+            (Idenv.union (fun _ local _global -> Some local) own idenv, env, decl) in
           outcomes := [] ;
           let t1 = Unix.gettimeofday () in
           let (idenv', env, decl), timed_out =
@@ -567,11 +582,21 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
                 ~convention:(StrMap.find_opt d.name conventions)
                 visible opts_native unchanged d.past)
           in
+          (* A function that ran out of time is still bound, at its declared C
+             signature, as NativeSem does when inference fails: left unbound,
+             its callers would report an unbound variable, and the branches
+             calling it would be pruned from their domains. *)
+          let idenv', env, decl =
+            if timed_out && opts_native.fallback_c_signature then
+              Runner.bind_c_signature (visible d.name) (idenv', env, decl) d.past
+            else (idenv', env, decl)
+          in
           native_def ~kind:"function" ~file:d.file ~past:d.past ~calls:d.calls ~timed_out
             ~wall:(Unix.gettimeofday () -. t1) ;
           let idenv =
-            match NStrMap.find_opt d.name idenv' with
-            | Some v -> NStrMap.add d.name v idenv
+            let key = Runner.binding_name d.past in
+            match Idenv.find_opt key idenv' with
+            | Some v -> Idenv.add key v idenv
             | None -> idenv
           in
           (idenv, env, decl))
@@ -627,11 +652,8 @@ let report_deps opts (pkg : Pkg.t) entry_points files =
   let fun_names = C_deps.fun_names pasts in
   let defs =
     C_deps.fundefs ~fun_names pasts |> C_deps.reachable ~roots:(List.map fst entry_points) in
-  let by_name = defs |> List.map (fun (d : C_deps.fundef) -> (d.name, d)) |> StrMap.of_list in
-  topo_sort (List.map (fun (d : C_deps.fundef) -> d.name) defs)
-    (fun n -> own_calls by_name (StrMap.find n by_name))
-  |> List.iter (fun n ->
-      let d = StrMap.find n by_name in
+  schedule defs
+  |> List.iter (fun (d : C_deps.fundef) ->
       match d.calls with
       | [] -> Format.printf "  %s (%s)@." d.name (Filename.basename d.file)
       | calls ->

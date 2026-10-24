@@ -1,13 +1,14 @@
 name: Docker
 
-# Two kinds of build. A push to main builds the submodules at their PINNED
-# SHAs: reproducible, and what typr's own tests were run against. A dependency
-# update (dispatched by nativesem), the weekly schedule, or a manual run with
-# `unpinned` refresh every submodule to the tip of its branch first: what the
-# dashboard needs to track progress in Rsem, NativeSem and rstt. Both kinds
-# tag `latest`; only pinned builds move the `pinned` tag, so r-typing can be
-# pointed back at reproducible builds in one line. The image records which
-# kind it is.
+# Two kinds of build. Every automatic build -- a push to main, a dependency
+# update (dispatched by Rsem or nativesem), the weekly schedule -- is UNPINNED:
+# every submodule is refreshed to the tip of its branch first, which is what
+# the dashboard needs to track progress in typr, Rsem, NativeSem and rstt
+# together. Only unpinned builds tag `latest` (what r-typing runs) and notify
+# r-typing. A PINNED build, at the SHAs typr records, only happens on a manual
+# run with `pinned`; it moves the `pinned` tag and leaves `latest` alone, so a
+# reproducible image exists without the pins having to follow every upstream
+# push. Either way the image records the four commits it was built from.
 on:
   push:
     branches: [main]
@@ -15,12 +16,19 @@ on:
     types: [dependency-updated]
   workflow_dispatch:
     inputs:
-      unpinned:
-        description: "Refresh the submodules to their branch tips before building"
+      pinned:
+        description: "Build the submodules at the SHAs typr pins (moves the `pinned` tag, not `latest`)"
         type: boolean
         default: false
   schedule:
     - cron: "17 3 * * 1"
+
+# A queued build refreshes the tips when it starts, so only the newest pending
+# one needs to run; a running one is never cancelled, so `latest` is never
+# left half-pushed.
+concurrency:
+  group: docker
+  cancel-in-progress: false
 
 jobs:
   build-and-push:
@@ -38,13 +46,11 @@ jobs:
       - name: Refresh submodules to their branch tips (unpinned builds)
         id: pins
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ] || \
-             [ "${{ github.event_name }}" = "schedule" ] || \
-             [ "${{ github.event.inputs.unpinned }}" = "true" ]; then
+          if [ "${{ github.event.inputs.pinned }}" = "true" ]; then
+            echo "pinned=true" >> "$GITHUB_OUTPUT"
+          else
             git submodule update --remote --recursive
             echo "pinned=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "pinned=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Resolve the four commits
@@ -72,9 +78,10 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/typr
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ steps.pins.outputs.pinned == 'false' }}
             type=raw,value=pinned,enable=${{ steps.pins.outputs.pinned == 'true' }}
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,enable=${{ steps.pins.outputs.pinned == 'false' }}
+            type=sha,prefix=pinned-sha-,enable=${{ steps.pins.outputs.pinned == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -93,10 +100,13 @@ jobs:
             PINNED=${{ steps.pins.outputs.pinned }}
             SUBJECT=${{ github.event_name }}
 
-      # Notify r-typing so it reruns the pipeline. Needs a PAT with `workflow`
-      # scope on PRL-PRG/r-typing stored here as PIPELINE_DISPATCH_TOKEN; until
-      # it exists this step fails without failing the build.
+      # Notify r-typing so it reruns the pipeline on the new `latest`; a pinned
+      # build leaves `latest` alone, so there is nothing new to run. Needs a PAT
+      # with `workflow` scope on PRL-PRG/r-typing stored here as
+      # PIPELINE_DISPATCH_TOKEN; until it exists this step fails without
+      # failing the build.
       - name: Trigger r-typing pipeline
+        if: steps.pins.outputs.pinned == 'false'
         uses: peter-evans/repository-dispatch@v4
         continue-on-error: true
         with:
