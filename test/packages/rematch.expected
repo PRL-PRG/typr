@@ -10,10 +10,10 @@
 ===== packages/rematch/R/package.R =====
 _: null
 
-re_match: (@(text: vec, pattern: CHR, ...: (absent, any)) |
- @(text: vec, pattern: clx, ...: (absent, any)) |
- @(CHR, text: vec, ...: (absent, any)) |
- @(clx, text: vec, ...: (absent, any)) -> empty)<> with {  }
+re_match: (@(text: vec | null, pattern: CHR, ...: (absent, any)) | @(text: vec |
+ null, pattern: ~CHR, ...: (absent, any)) | @(CHR, text: vec |
+ null, ...: (absent, any)) | @(~CHR, text: vec | null, ...: (absent, any)) ->
+ empty)<> with {  }
 
 re_match_all1: Untypeable: unbound variable
 Line 114, characters 11-20

@@ -20,8 +20,8 @@ na_chr: na_string<> with {  }
 
 nan: DBL1<> with {  }
 
-forward_dots: (((x: vec) -> CHR) & ((x: vec1) -> CHR1) & (@(x: any, ...: (absent, any)) ->
- empty))<> with {  }
+forward_dots: (((x: vec) -> CHR<>) & ((x: vec1) -> CHR1<>) &
+ (@(x: any, ...: (absent, any)) -> empty))<> with {  }
 
 annotated: (x: dbl) -> dbl
 
@@ -33,9 +33,10 @@ uses_dot_global: (() -> CHR1)<> with {  }
 
 uses_dot_machine: (() -> DBL1)<> with {  }
 
-powered: (((x: dbl) -> dbl) & ((x: dbl1) -> dbl1))<> with {  }
+powered: (((x: dbl) -> DBL) & ((x: dbl1) -> DBL1))<> with {  }
 
-structured: ∀'a. ((x: 'a) -> 'a)<> with {  }
+structured: ∀'a,'b. (((x: any) -> any) & ((x: vec & v('b)) -> vec & v('b)) &
+ ((x: { 'a }) -> { 'a }))<> with {  }
 
 dot_labelled: (.Data: dbl, .f: vec) -> dbl
 
@@ -47,9 +48,9 @@ for_next: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
 while_break: ∀'a. ((x: 'a) -> 'a)<> with {  }
 
-for_break_cond: (() -> dbl1)<> with {  }
+for_break_cond: (() -> DBL1 | INT1)<> with {  }
 
-for_nested: (() -> dbl1)<> with {  }
+for_nested: (() -> DBL1 | INT1)<> with {  }
 
 cache: {  }
 
@@ -77,13 +78,13 @@ use_z: (() -> (1...2.)<> with {  })<> with {  }
 
 _: null
 
-i: dbl1
+i: DBL1 | INT1
 
-w: dbl1
+w: DBL1 | INT1
 
-use_w: (() -> dbl1)<> with {  }
+use_w: (() -> DBL1 | INT1)<> with {  }
 
-use_i: (() -> dbl1)<> with {  }
+use_i: (() -> DBL1 | INT1)<> with {  }
 
 ablk: dbl
 
@@ -91,13 +92,13 @@ fblk: { h: (a: dbl1) -> dbl1 }
 
 use_fblk: (() -> dbl1)<> with {  }
 
-counter: (() -> dbl1)<> with {  }
+counter: (() -> DBL1)<> with {  }
 
 leaked: Untypeable: unbound variable
 Line 125, characters 21-24
 name: afn
 
-nchar_of_scalar: (() -> INT1)<> with {  }
+nchar_of_scalar: (() -> INT1<>)<> with {  }
 
 three: (() -> CHR<>)<> with {  }
 
@@ -125,23 +126,23 @@ name: mutual_b
 
 blame_second: Untypeable: untypeable encoding
 Line 163, characters 46-62
-application of toupper failed
+application of base::toupper failed
 argument is of type @({ 1.<> with {  } })
 
 blame_branch: Untypeable: untypeable encoding
 Line 164, characters 57-73
-application of toupper failed
+application of base::toupper failed
 argument is of type @({ 1.<> with {  } })
 
 blame_arity: Untypeable: untypeable encoding
 Line 165, characters 46-63
-application of nchar failed
-argument is of type @('x & vec, 'x & vec, 'x & vec, 'x & vec)
+application of base::nchar failed
+argument is of type @('x & vec1, 'x & vec1, 'x & vec1, 'x & vec1)
 
 cb_ty: Untypeable: untypeable coercion
 Line 176, characters 9-26
 expected: (a: dbl1) --> dbl1
-given: ((a: 'a & dbl) --> dbl) & ((a: 'a & dbl1) --> dbl1)
+given: ((a: 'a & dbl1) --> dbl1) & ((a: 'a & ((DBL | vec & v('I587)) & dbl)) --> (DBL | vec & v('I587)) & dbl)
 
 cb_sig: (a: dbl1) -> dbl1
 

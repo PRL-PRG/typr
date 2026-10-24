@@ -92,9 +92,9 @@ RUN mkdir -p /checker/_build/default/bin
 COPY --from=builder /home/opam/typr/_build/default/bin/main.exe /checker/_build/default/bin/main.exe
 
 # NativeSem's R-C-API signatures, found among the ancestors of the CWD; and the
-# base R prelude the R side is checked against.
+# base R prelude the R side is checked against (Rsem's signatures).
 COPY --from=builder /home/opam/typr/nativesem/types /checker/types
-COPY --from=builder /home/opam/typr/prelude/base.R /checker/prelude/base.R
+COPY --from=builder /home/opam/typr/Rsem/sigs/base.R /checker/prelude/base.R
 
 COPY --from=builder /home/opam/r-parser/core/tree-sitter/lib/libtree-sitter.so* /usr/local/lib/
 RUN ldconfig

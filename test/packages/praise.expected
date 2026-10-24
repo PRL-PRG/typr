@@ -38,16 +38,16 @@ praise_parts: { adjective: CHR<>, adverb: CHR<>, adverb_manner: CHR<>, created: 
 
 template_pattern: "\\\\$\\\\{([^\\\\}]+)\\\\}"<> with {  }
 
-is_template: (((x: vec) -> lgl<>) & ((x: vec1) -> lgl1<>))<> with {  }
+is_template: (((x: vec) -> LGL<>) & ((x: vec1) -> LGL1<>))<> with {  }
 
-capitalize: ((x: vec) -> CHR1)<> with {  }
+capitalize: (((x: vec) -> CHR<>) & ((x: vec1) -> CHR1<>))<> with {  }
 
-match_case_sub: (((pattern: vec1, part: vec, replacement: vec1, text: vec) -> CHR) &
+match_case_sub: (((pattern: vec1, part: vec, replacement: vec1, text: vec) -> CHR<>) &
  ((pattern: vec1, part: vec, replacement: vec1, text: vec1) ->
- CHR1))<> with {  }
+ CHR1<>))<> with {  }
 
-replace_one_template: ((template: vec1) -> CHR1)<> with {  }
+replace_one_template: ((template: vec1) -> CHR1<>)<> with {  }
 
-praise: ∀'a. ((template: (CHR1 & ~"You are ${adjective}!"<> with {  } | 'a &
- vec1)?) -> CHR1 | vec1 & 'a)<> with {  }
+praise: ∀'a. ((template: (CHR1<> & ~"You are ${adjective}!"<> with {  } | 'a &
+ vec1)?) -> CHR1<> | vec1 & 'a)<> with {  }
 

@@ -53,8 +53,9 @@ dune exec typr -- --deps path/to/package
 # Type-check the package: native sources first, then the R sources
 dune exec typr -- path/to/package
 
-# Signatures of the functions the package builds upon (base R, imports)
-dune exec typr -- --prelude base.R path/to/package
+# Signatures of the functions the package builds upon (base R, imports).
+# Those of base R are Rsem's (Rsem/sigs/base.R), copied to _build/default/prelude/
+dune exec typr -- --prelude _build/default/prelude/base.R path/to/package
 
 # Give up on any function that takes longer than 10s, and carry on
 dune exec typr -- --timeout 10 path/to/package
