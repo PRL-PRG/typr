@@ -518,7 +518,12 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
           List.fold_left (fun (idenv, env, decl, file_idenvs) item ->
             let internal =
               match item with
-              | _, PAst.GlobalVar (PAst.Static, _, _) -> true
+              (* A [static] in a header is in every file that includes it, each
+                 with its own copy of the same definition. Local includes are
+                 not followed, so bound in the header's own scope it would be
+                 visible nowhere (utf8's [composition_*] tables, vctrs'
+                 [args_start]): bind it package-wide. *)
+              | _, PAst.GlobalVar (PAst.Static, _, _) -> not (Filename.check_suffix file ".h")
               | _, PAst.GlobalVar (PAst.Definition, _, _) ->
                 StrMap.mem (PAst.top_level_unit_name item) conflicted
               | _ -> false
