@@ -96,16 +96,49 @@ let topo_sort nodes deps =
   List.iter visit nodes ;
   List.rev !out
 
+(* The strongly connected components of the graph [deps] over [nodes]
+   (Tarjan's algorithm), callees first: a component comes after every
+   component it reaches. Nodes within a component are mutually recursive. *)
+let sccs nodes deps =
+  let index = Hashtbl.create 64 and low = Hashtbl.create 64
+  and on_stack = Hashtbl.create 64 and stack = ref [] and next = ref 0
+  and out = ref [] in
+  let rec visit v =
+    Hashtbl.replace index v !next ; Hashtbl.replace low v !next ; incr next ;
+    stack := v :: !stack ; Hashtbl.replace on_stack v () ;
+    List.iter (fun w ->
+        if not (Hashtbl.mem index w) then begin
+          visit w ;
+          Hashtbl.replace low v (min (Hashtbl.find low v) (Hashtbl.find low w))
+        end else if Hashtbl.mem on_stack w then
+          Hashtbl.replace low v (min (Hashtbl.find low v) (Hashtbl.find index w)))
+      (deps v) ;
+    if Hashtbl.find low v = Hashtbl.find index v then begin
+      let rec pop acc =
+        match !stack with
+        | w :: rest ->
+          stack := rest ; Hashtbl.remove on_stack w ;
+          if w = v then w :: acc else pop (w :: acc)
+        | [] -> acc
+      in
+      out := pop [] :: !out
+    end
+  in
+  List.iter (fun v -> if not (Hashtbl.mem index v) then visit v) nodes ;
+  List.rev !out
+
 (* The callees of a native function that are scheduled themselves. [calls] also
    names functions defined in included headers (see {!C_deps.fun_names}),
    which are never scheduled and have no entry in [by_name]. *)
 let own_calls by_name (d : C_deps.fundef) =
   List.filter (fun c -> StrMap.mem c by_name) d.calls
 
-(* [defs] callees first. A function-like macro and a function of the same name
-   are both scheduled, the function first: a macro over a same-named function
-   ([#define f(x) (f)(x, 0)]) calls it. Calls name definitions, not
-   namespaces, so dependencies are between names. *)
+(* [defs] callees first, grouped by strongly connected component: a group of
+   several names is a cycle of mutually recursive functions. A function-like
+   macro and a function of the same name are both scheduled, the function
+   first: a macro over a same-named function ([#define f(x) (f)(x, 0)]) calls
+   it. Calls name definitions, not namespaces, so dependencies are between
+   names. *)
 let schedule (defs : C_deps.fundef list) =
   let by_name =
     List.fold_left (fun m (d : C_deps.fundef) ->
@@ -119,8 +152,8 @@ let schedule (defs : C_deps.fundef list) =
     let seen = Hashtbl.create 64 in
     List.filter_map (fun (d : C_deps.fundef) ->
         if Hashtbl.mem seen d.name then None else (Hashtbl.add seen d.name () ; Some d.name)) defs in
-  topo_sort names (fun n -> List.concat_map (own_calls by_name) (defs_of n))
-  |> List.concat_map defs_of
+  sccs names (fun n -> List.concat_map (own_calls by_name) (defs_of n))
+  |> List.map (fun group -> (List.length group > 1, List.concat_map defs_of group))
 
 (* ===== R side ===== *)
 
@@ -570,11 +603,11 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
         C_deps.fundefs ~fun_names pasts
         |> C_deps.reachable ~roots:(List.map fst entry_points)
       in
-      let ordered = schedule defs in
+      let groups = schedule defs in
+      let ordered = List.concat_map snd groups in
       Hashtbl.replace rep.stats "native_n_functions" (List.length ordered) ;
       let t0 = Unix.gettimeofday () in
-      let idenv, env, _ =
-        List.fold_left (fun (idenv, env, decl) (d : C_deps.fundef) ->
+      let type_def (idenv, env, decl) (d : C_deps.fundef) =
           let own =
             StrMap.find_opt d.file file_idenvs |> Option.value ~default:Idenv.empty in
           let unchanged =
@@ -604,8 +637,21 @@ let run_native opts rep (pkg : Pkg.t) entry_points =
             | Some v -> Idenv.add key v idenv
             | None -> idenv
           in
-          (idenv, env, decl))
-          (idenv, env, decl) ordered
+          (idenv, env, decl)
+      in
+      let idenv, env, _ =
+        List.fold_left (fun acc (cycle, defs) ->
+          (* In a cycle, whichever member is typed first calls the others
+             before they are typed: bind them all at their declared C
+             signatures first, each typed member then replacing its own. *)
+          let acc =
+            if cycle && opts_native.fallback_c_signature then
+              List.fold_left (fun acc (d : C_deps.fundef) ->
+                  Runner.bind_c_signature false acc d.past) acc defs
+            else acc
+          in
+          List.fold_left type_def acc defs)
+          (idenv, env, decl) groups
       in
       emit rep "phase"
         [ ("name", R.S "native_functions") ; ("elapsed_sec", R.F (Unix.gettimeofday () -. t0)) ;
@@ -657,7 +703,7 @@ let report_deps opts (pkg : Pkg.t) entry_points files =
   let fun_names = C_deps.fun_names pasts in
   let defs =
     C_deps.fundefs ~fun_names pasts |> C_deps.reachable ~roots:(List.map fst entry_points) in
-  schedule defs
+  schedule defs |> List.concat_map snd
   |> List.iter (fun (d : C_deps.fundef) ->
       match d.calls with
       | [] -> Format.printf "  %s (%s)@." d.name (Filename.basename d.file)
