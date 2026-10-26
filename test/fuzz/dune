@@ -1,0 +1,6 @@
+; ===== Fuzzing =====
+; Unit tests of the fuzzing modules: no package is type-checked.
+
+(test
+ (name valty_test)
+ (libraries typr rsem.lang mlsem rstt yojson))
