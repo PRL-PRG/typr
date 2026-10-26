@@ -7,7 +7,11 @@
 
     The description of a value is an object whose ["t"] field gives its kind:
     - ["null"], ["env"], ["sym"], ["lang"], ["pairlist"], ["extptr"],
-      ["closure"], ["builtin"]: no further field; ["other"] for the remaining
+      ["closure"], ["builtin"]: no further field, but for the closures the
+      fuzzer itself builds, which accept any arguments and return a constant:
+      the description of that constant in ["ret"], and in ["doms"] the
+      domains to type them at (see {!register_domain}); ["other"] for the
+      remaining
       R types (S4 objects, [...] objects, ...), with their [typeof] in
       ["type"]. Pairlists are typed as calls, as NativeSem does ([LISTSXP] in
       its [base.ty]);
@@ -29,8 +33,9 @@
     mode and length other than 1, which is exact: no type tells two of them
     apart. Some values have types that over-approximate them, and a failed
     subtyping check on them proves nothing. The result says so in [exact]:
-    - closures and builtins, typed as any function, and other values, typed
-      as [any];
+    - closures and builtins, typed as any function (or, with ["doms"], as
+      the intersection of the arrows from these domains to ["ret"]), and
+      other values, typed as [any];
     - lists with unnamed elements: all of them go to the list's tail, which
       does not count them, so [list(1)] gets the type of [list()] as well;
     - lists with duplicated names, of which the encoding keeps one;
@@ -127,18 +132,36 @@ let classes d =
     in
     Classes.mk { pos ; neg = [] ; unk = [] ; tail = Classes.NoOther }
 
+(* Domains, which a description refers to by number. A function that
+   accepts any arguments has every type [d -> t], but Rstt only relates the
+   argument types of a same signature: the domain of a closure must be the
+   very domain of the type it is checked against. Only the fuzzer's own
+   closures, built in this process, have domains. *)
+let domains : (int, Ty.t) Hashtbl.t = Hashtbl.create 16
+
+let register_domain d =
+  let id = Hashtbl.length domains in
+  Hashtbl.add domains id d ; id
+
 let rec of_json d =
   match field "t" d |> to_string "t" with
+  (* R values that cannot carry attributes: Rsem does not wrap them. *)
   | "null" -> { ty = Null.any ; exact = true }
+  | "sym" -> { ty = Sym.any ; exact = true }
   | kind ->
     let content, exact =
       match kind with
       | "vec" -> vec d
       | "list" -> list d
       | "env" -> Env.any, true
-      | "sym" -> Sym.any, true
       | "lang" | "pairlist" -> Lang.any, true
       | "extptr" -> ExternalPtr.any, true
+      | "closure" when field "doms" d <> `Null ->
+        let ret = of_json (field "ret" d) in
+        field "doms" d |> to_list "doms"
+        |> List.map (fun id -> Hashtbl.find domains (to_int "doms" id))
+        |> List.map (fun dom -> Descr.mk_arrow (dom, ret.ty) |> Ty.mk_descr)
+        |> Ty.conj, false
       | "closure" | "builtin" -> Arrows.any |> Descr.mk_arrows |> Ty.mk_descr, false
       | "other" -> Ty.any, false
       | k -> bad "unknown value kind %s" k

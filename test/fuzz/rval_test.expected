@@ -69,7 +69,7 @@ list("a b" = list("c" = NULL))
 new.env()
   : env<> with {  }
 as.name("x")
-  : sym<> with {  }
+  : sym
 quote(f(x, 1))
   : lang<> with {  }
 function(...) 1

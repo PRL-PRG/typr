@@ -39,6 +39,8 @@ let cases = [
   ["{ int1 }"; "{ chr1 }"; "{ }"] ;
   "function(x) x", {|{"t":"closure"}|},
   ["any"; "(x: any) -> any"; "int"] ;
+  "as.name(\"x\")", {|{"t":"sym"}|},
+  ["sym"; "lang"; "any"] ;
   "new.env()", {|{"t":"env"}|},
   ["env"; "null"] ;
   "pairlist(a = 1)",

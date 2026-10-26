@@ -68,6 +68,10 @@ function(x) x : arrow<> with {  }  (inexact)
   any                        in
   (x: any) -> any            unknown
   int                        out
+as.name("x") : sym
+  sym                        in
+  lang                       out
+  any                        in
 new.env() : env<> with {  }
   env                        in
   null                       out

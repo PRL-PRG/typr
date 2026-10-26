@@ -23,7 +23,7 @@ let values = [
   Vec (Raw, [I 255]) ; Vec (Raw, [I 0 ; I 1]) ; Vec (Raw, []) ;
   List [] ; List [None, d 1.] ; List [Some "a", d 1. ; None, s "x"] ;
   List [Some "a b", List [Some "c", Null]] ;
-  Env ; Sym "x" ; Lang "f(x, 1)" ; Fun (d 1.) ;
+  Env ; Sym "x" ; Lang "f(x, 1)" ; Fun { doms = [] ; ret = d 1. } ;
   With { v = Vec (Int, [I 1]) ; cls = Some ["factor"] ; attrs = ["levels", s "a"] } ;
   With { v = Vec (Dbl, [D 1. ; D 2.]) ; cls = None ;
          attrs = ["names", Vec (Chr, [S "a" ; S "b"])] } ;

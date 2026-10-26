@@ -4,7 +4,9 @@
     of this small AST, prints them as R source for the harness to evaluate, and
     types them with {!Valty}, through [describe]: the description R itself
     would give of the evaluated value ([fuzz/describe.R]). The two must agree,
-    which the [@fuzz-r] tests check. *)
+    which the [@fuzz-r] tests check, but for one addition: the description of
+    a closure carries the value it returns and the domains to type it at,
+    which R cannot see. *)
 
 type mode = Lgl | Int | Dbl | Clx | Chr | Raw
 
@@ -23,7 +25,8 @@ type t =
   | Env
   | Sym of string
   | Lang of string                       (* R source of a call *)
-  | Fun of t                             (* [function(...) v] *)
+  | Fun of { doms : Mlsem.Types.Ty.t list ; ret : t }
+    (* [function(...) ret], typed at the domains [doms] *)
   | With of { v : t ; cls : string list option ; attrs : (string * t) list }
 
 let mode_name = function
@@ -86,7 +89,7 @@ let rec to_r = function
   | Env -> "new.env()"
   | Sym s -> Printf.sprintf "as.name(%s)" (quote s)
   | Lang s -> Printf.sprintf "quote(%s)" s
-  | Fun v -> Printf.sprintf "function(...) %s" (to_r v)
+  | Fun { ret ; _ } -> Printf.sprintf "function(...) %s" (to_r ret)
   | With { v ; cls ; attrs } ->
     let attrs = attrs |> List.map (fun (n, a) -> arg_name n ^ to_r a) in
     let cls = match cls with
@@ -137,7 +140,10 @@ let rec describe v : Yojson.Safe.t =
   | Env -> `Assoc ["t", `String "env"]
   | Sym _ -> `Assoc ["t", `String "sym"]
   | Lang _ -> `Assoc ["t", `String "lang"]
-  | Fun _ -> `Assoc ["t", `String "closure"]
+  | Fun { doms = [] ; _ } -> `Assoc ["t", `String "closure"]
+  | Fun { doms ; ret } ->
+    let doms = List.map (fun d -> `Int (Valty.register_domain d)) doms in
+    `Assoc ["t", `String "closure" ; "ret", describe ret ; "doms", `List doms]
   | With { v ; cls ; attrs } ->
     let fields = match describe v with `Assoc f -> f | _ -> assert false in
     let inner_attrs = match List.assoc_opt "attrs" fields with
