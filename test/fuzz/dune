@@ -16,6 +16,11 @@
  (modules gen_test)
  (libraries typr rsem.lang mlsem rstt))
 
+(test
+ (name call_test)
+ (modules call_test)
+ (libraries typr rsem.lang mlsem rstt))
+
 ; The tests that need R (with jsonlite) are in the fuzz-r alias, out of the
 ; default runtest: `dune build @fuzz-r`.
 

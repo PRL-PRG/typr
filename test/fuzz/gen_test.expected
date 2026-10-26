@@ -107,12 +107,12 @@ int | null
   as.name("x")
   as.name("x")
   as.name("x")
-  list(as.name("x"))
+  function(...) as.name("x")
 any
-  as.raw(c(255, 0))
-  as.name("x")
+  list()
   as.name("x")
   NULL
+  list()
 vec
   raw(0)
   c(NA, FALSE)
@@ -140,7 +140,7 @@ vec1
   list()
 list
   list()
-  list(new.env())
+  list(quote(f(x)))
   list()
   list()
 { a: { b: tt } }
@@ -159,10 +159,10 @@ INT<factor> with { levels: CHR }
   structure(c(NA_integer_, -1L), "levels" = "é", class = "factor")
   structure(2147483647L, "levels" = "é", class = "factor")
 <foo, bar>
-  structure(function(...) NULL, class = c("foo", "bar"))
-  structure(c(TRUE, NA), class = c("foo", "bar"))
-  structure(quote(f(x)), class = c("foo", "bar"))
-  structure("NA", class = c("foo", "bar"))
+  structure(new("externalptr"), class = c("foo", "bar"))
+  structure(complex(0), class = c("foo", "bar"))
+  structure(character(0), class = c("foo", "bar"))
+  structure(list(), class = c("foo", "bar"))
 dbl with { names: chr }
   structure(c(-2147483647, 2147483647), "names" = c("n1", "n2"))
   structure(as.raw(c(0)), "names" = "n1")
@@ -188,43 +188,53 @@ lang
   quote(f(x))
   quote(f(x))
   quote(f(x))
+externalptr
+  new("externalptr")
+  new("externalptr")
+  new("externalptr")
+  new("externalptr")
 (x: dbl1) -> chr1
-  function(...) TRUE
-  function(...) NA
-  function(...) "NA"
-  function(...) FALSE
+  function(...) as.raw(c(255))
+  function(...) 42L
+  function(...) 0.5
+  function(...) complex(real = 1, imaginary = -2)
+(x: dbl1) -> empty
+  function(...) stop("fuzz: no value")
+  function(...) stop("fuzz: no value")
+  function(...) stop("fuzz: no value")
+  function(...) stop("fuzz: no value")
 v('a)
-  numeric(0)
-  c(-2147483647, -2147483647)
-  c(NA_integer_, 0L)
-  c(NA_integer_, 0L, NA_integer_, -1L, -2147483647L)
+  "a"
+  logical(0)
+  "NA"
+  c("é", "é", "x y", "NA", "x y")
 'a
-  list(as.name("x"))
+  -2147483647
   NULL
-  NULL
-  NULL
+  "a"
+  NA_real_
 { a: 'a, b: 'a }
-  list("a" = numeric(0), "b" = c(NA_real_, NA_real_))
-  list("a" = "", "b" = "")
-  list("a" = 2147483647, "b" = numeric(0))
-  (none)
+  list("a" = NULL, "b" = NULL)
+  list("a" = "NA", "b" = "é")
+  list("a" = list(), "b" = list(NULL))
+  list("a" = c(2147483647, -2.5), "b" = numeric(0))
 v1('a) | null
-  NULL
-  TRUE
-  TRUE
+  FALSE
+  "é"
   NA
+  "é"
 empty
   (none)
   (none)
   (none)
   (none)
 dbl1 & chr1
-  1
-  42L
-  NA_integer_
-  NA
-int1 & chr1 & ~^INT1
+  -Inf
+  as.raw(c(255))
+  2
   TRUE
+int1 & chr1 & ~^INT1
+  as.raw(c(255))
   as.raw(c(0))
-  as.raw(c(255))
-  as.raw(c(255))
+  as.raw(c(0))
+  NA

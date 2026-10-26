@@ -9,11 +9,10 @@
     - ["null"], ["env"], ["sym"], ["lang"], ["pairlist"], ["extptr"],
       ["closure"], ["builtin"]: no further field, but for the closures the
       fuzzer itself builds, which accept any arguments and return a constant:
-      the description of that constant in ["ret"], and in ["doms"] the
-      domains to type them at (see {!register_domain}); ["other"] for the
-      remaining
-      R types (S4 objects, [...] objects, ...), with their [typeof] in
-      ["type"]. Pairlists are typed as calls, as NativeSem does ([LISTSXP] in
+      the description of that constant in ["ret"] (none if the closure
+      always fails), and in ["doms"] the domains to type them at (see
+      {!register_domain}); ["other"] for the remaining R types (S4 objects,
+      [...] objects, ...), with their [typeof] in ["type"]. Pairlists are typed as calls, as NativeSem does ([LISTSXP] in
       its [base.ty]);
     - ["vec"]: ["mode"] (one of [lgl], [int], [dbl], [clx], [chr], [raw]) and
       ["len"]. A vector of length 1 also has ["na"], and when it is not [NA]
@@ -157,10 +156,10 @@ let rec of_json d =
       | "lang" | "pairlist" -> Lang.any, true
       | "extptr" -> ExternalPtr.any, true
       | "closure" when field "doms" d <> `Null ->
-        let ret = of_json (field "ret" d) in
+        let ret = match field "ret" d with `Null -> Ty.empty | r -> (of_json r).ty in
         field "doms" d |> to_list "doms"
         |> List.map (fun id -> Hashtbl.find domains (to_int "doms" id))
-        |> List.map (fun dom -> Descr.mk_arrow (dom, ret.ty) |> Ty.mk_descr)
+        |> List.map (fun dom -> Descr.mk_arrow (dom, ret) |> Ty.mk_descr)
         |> Ty.conj, false
       | "closure" | "builtin" -> Arrows.any |> Descr.mk_arrows |> Ty.mk_descr, false
       | "other" -> Ty.any, false

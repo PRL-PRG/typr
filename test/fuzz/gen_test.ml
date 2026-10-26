@@ -17,7 +17,7 @@ let types = [
   "{ }"; "{ a: int1, b: chr1? }"; "{ int1 }"; "list"; "{ a: { b: tt } }";
   "{ a: dbl1 }<foo>"; "INT<factor> with { levels: CHR }"; "<foo, bar>";
   "dbl with { names: chr }"; "int with { dim: INT }";
-  "env"; "sym"; "lang"; "(x: dbl1) -> chr1";
+  "env"; "sym"; "lang"; "externalptr"; "(x: dbl1) -> chr1"; "(x: dbl1) -> empty";
   "v('a)"; "'a"; "{ a: 'a, b: 'a }"; "v1('a) | null";
   "empty"; "dbl1 & chr1"; "int1 & chr1 & ~^INT1";
 ]

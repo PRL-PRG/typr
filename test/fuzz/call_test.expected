@@ -1,0 +1,88 @@
+(x: int1, y: chr1?) -> dbl1
+  list(TRUE, "NA")
+    -> dbl1
+  list("x" = TRUE, "y" = 2)
+    -> dbl1
+  list("x" = NA, "y" = 0L)
+    -> dbl1
+(x: dbl, ...: chr1) -> null
+  list("x" = NA)
+    -> null
+  list(NA, "fuzz_dot1" = 0L)
+    -> null
+  list("x" = raw(0), "fuzz_dot1" = 2147483647L)
+    -> null
+(...: any) -> null
+  list(new("externalptr"), "fuzz_dot1" = NULL)
+    -> null
+  list(new("externalptr"), -1L)
+    -> null
+  list("fuzz_dot1" = as.name("x"))
+    -> null
+((x: int1) -> int1) & ((x: chr1) -> chr1)
+  list(2L)
+    -> int1
+  list("x" = NA)
+    -> int1
+  list("NA")
+    -> vec1
+(x: 'a, y: 'a?) -> 'a
+  list("x" = numeric(0))
+    -> DBL
+  list("x" = c(2147483647, -1), "y" = Inf)
+    -> DBL
+  list(-2.5)
+    -> DBL
+(x: v('p)) -> v('p)
+  list(c(NA, NA, FALSE, TRUE, FALSE))
+    -> LGL
+  list(integer(0))
+    -> INT
+  list("x" = c(42L, -1L))
+    -> INT
+(x: lgl1, y: INT<factor> with { levels: CHR }) -> any
+  list("x" = as.raw(c(255)), "y" = structure(1L, "levels" = c("x y", "NA", "é", "é", NA_character_), class = "factor"))
+    -> any
+  list(FALSE, structure(c(0L, -1L), "levels" = c("NA", "a"), class = "factor"))
+    -> any
+  list(as.raw(c(0)), "y" = structure(c(0L, -2147483647L, NA_integer_, -1L, 0L), "levels" = "x y", class = "factor"))
+    -> any
+(a: { b: tt, c: dbl? }) -> null
+  list(list("b" = TRUE, "c" = c(0L, 2147483647L, 0L, 2L, 1000000L)))
+    -> null
+  list("a" = list("b" = TRUE, "c" = -2147483647L))
+    -> null
+  list("a" = list("b" = TRUE))
+    -> null
+(f: (x: dbl1) -> dbl1, n: ^int1) -> dbl
+  list(function(...) FALSE, "n" = FALSE)
+    -> dbl
+  list(function(...) FALSE, TRUE)
+    -> dbl
+  list("f" = function(...) TRUE, "n" = -2147483647L)
+    -> dbl
+(x1: INT, x2: CHR1) -> null  (positional)
+  list(integer(0), "x y")
+    -> null
+  list(c(2147483647L, -2147483647L, 0L, 2147483647L, 0L), "x y")
+    -> null
+  list(c(2147483647L, 2L), "x y")
+    -> null
+(x: empty) -> null
+  (none)
+  (none)
+  (none)
+(x: 'a & null) -> null & 'a
+  list("x" = NULL)
+    -> null
+  list("x" = NULL)
+    -> null
+  list(NULL)
+    -> null
+(p: externalptr, f: (x: dbl) -> empty) -> null
+  list(new("externalptr"), "f" = function(...) stop("fuzz: no value"))
+    -> null
+  list(new("externalptr"), function(...) stop("fuzz: no value"))
+    -> null
+  list(new("externalptr"), function(...) stop("fuzz: no value"))
+    -> null

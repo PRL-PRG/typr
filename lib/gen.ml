@@ -9,7 +9,10 @@
     the fuzzer reports rather than hides.
 
     Type variables are instantiated first ({!instantiate}), with ground types
-    drawn from small pools; [sample_poly] does both. *)
+    drawn from small pools; [sample_poly] does both.
+
+    [gen_call] draws the arguments of a call from the domain of a function
+    type, together with the result type the function must have on them. *)
 
 open Rstt
 
@@ -25,53 +28,47 @@ let coin st = Random.State.bool st
 
 let mode_pool = [ Prim.Int.any ; Prim.Dbl.any ; Prim.Chr.any ; Prim.Lgl.any ]
 
-(* Instances for a variable: a whole vector mode, for the variables under
-   [v(..)], or the type of an R value. The prims are whole (with [NA]):
-   non-scalar vectors can only be typed by a whole mode (cf. {!Valty}). *)
-let var_pool =
+(* Instances for a variable under [v(..)]: a whole vector mode ([NA]
+   included: non-scalar vectors can only be typed by a whole mode, cf.
+   {!Valty}). *)
+let prim_pool = List.map Prim.mk mode_pool
+
+(* Instances for a variable standing for an R value. *)
+let value_pool =
   let vec m = Attr.mk_content (Vec.mk (Vec.Vector (Prim.mk m))) in
   let scalar m = Attr.mk_content (Vec.mk (Vec.Scalar (Prim.mk m))) in
-  List.map Prim.mk mode_pool
-  @ [ vec Prim.Dbl.any ; scalar Prim.Chr.any' ; Null.any ; Attr.mk_content Lst.any ]
+  [ vec Prim.Dbl.any ; scalar Prim.Chr.any' ; Null.any ; Attr.mk_content Lst.any ]
 
 (* Rows for row variables: no further field (a list with no other element,
-   a value with no other attribute), or anything. *)
+   a value with no other attribute, no extra argument), or anything. *)
 let row_pool = [ Row.all_fields (Ty.F.mk_descr Ty.O.absent) ; Row.any ]
 
 (* The R values: [NULL] and symbols, and every value that may carry
    attributes. *)
 let r_values = Ty.disj [ Null.any ; Sym.any ; Attr.any ]
 
-(* A substitution of every variable of [ty], each drawn among the instances
-   that add values of [within] to those [ty] has when the variable is empty:
-   a variable under [v(..)] gets a mode, a variable standing for a value gets
-   a value type. When no instance does, any instance that leaves [ty] with
-   values of [within] will do. The variables are instantiated one at a time,
-   so that the check sees the instances already drawn. *)
-let instantiate ?(within = r_values) st ty =
-  let try_pool apply empty pool v ty =
-    let without = Ty.cap (apply v empty ty) within in
-    let insts = pool |> List.filter_map (fun inst ->
-      let ty' = apply v inst ty in
-      let vals = Ty.cap ty' within in
-      if Ty.is_empty vals then None else Some (inst, ty', Ty.leq vals without)) in
-    let adding = List.filter (fun (_, _, same) -> not same) insts in
-    pick st (if adding = [] then insts else adding)
-    |> Option.map (fun (inst, ty', _) -> inst, ty')
-  in
+(* A substitution of every variable of [ty], each drawn from the pool that
+   fits its occurrences. A variable stands for an R value when substituting
+   it with all of them changes [ty] (compared with substituting nothing);
+   otherwise it only occurs under [v(..)], where [Prim.any] absorbs the
+   substitution, and it stands for a mode. The variables Rstt uses for the
+   identity of polymorphic signatures are left alone. Each instance is
+   drawn among those after which [ty] still satisfies [ok], if any: a
+   variable in [x: 'a & null] can only be [null]. *)
+let instantiate ?(ok = fun _ -> true) st ty =
+  let vars = VarSet.diff (Ty.vars ty) (Arg.polymorphic_vars ()) in
   let ty, s1 =
-    Ty.vars ty |> VarSet.elements |> List.fold_left (fun (ty, s) v ->
-      let apply v inst ty = Subst.apply (Subst.singleton1 v inst) ty in
-      match try_pool apply Ty.empty var_pool v ty with
-      | None -> ty, s
-      | Some (inst, ty) -> ty, (v, inst) :: s) (ty, [])
+    vars |> VarSet.elements |> List.fold_left (fun (ty, s) v ->
+      let sub inst = Subst.apply (Subst.singleton1 v inst) ty in
+      let pool = if Ty.equiv (sub r_values) (sub Ty.empty) then prim_pool else value_pool in
+      let pool = match List.filter (fun i -> ok (sub i)) pool with [] -> pool | p -> p in
+      let inst = Option.get (pick st pool) in
+      sub inst, (v, inst) :: s) (ty, [])
   in
   let ty, s2 =
     Ty.row_vars ty |> RowVarSet.elements |> List.fold_left (fun (ty, s) v ->
-      let apply v inst ty = Subst.apply (Subst.singleton2 v inst) ty in
-      match try_pool apply Row.empty row_pool v ty with
-      | None -> ty, s
-      | Some (inst, ty) -> ty, (v, inst) :: s) (ty, [])
+      let inst = Option.get (pick st row_pool) in
+      Subst.apply (Subst.singleton2 v inst) ty, (v, inst) :: s) (ty, [])
   in
   ty, Subst.of_list (List.rev s1) (List.rev s2)
 
@@ -189,21 +186,25 @@ let rec gen st depth ty : Rval.t option =
 
 and gen_content st depth c =
   let kinds = [ `Vec, Vec.any ; `Lst, Lst.any ; `Env, Env.any ;
-                `Lang, Lang.any ; `Fun, arrows_any ]
+                `Lang, Lang.any ; `Ext, ExternalPtr.any ; `Fun, arrows_any ]
               |> List.filter (fun (_, any) -> not (Ty.disjoint c any)) in
   Option.bind (pick st kinds) (function
     | `Vec, _ -> gen_vec st c
     | `Lst, _ -> gen_list st depth c
     | `Env, _ -> Some Rval.Env
     | `Lang, _ -> Some (Rval.Lang "f(x)")
+    | `Ext, _ -> Some Rval.ExtPtr
     | `Fun, _ ->
       (* A constant function, typed at all the domains of an intersection of
          arrows, returning a value of all their codomains. *)
       let lines = Mlsem.Types.Arrow.dnf (Ty.cap c arrows_any) in
       Option.bind (pick st lines) (fun arrows ->
+        let doms = List.map fst arrows in
         let codom = List.map snd arrows |> Ty.conj in
-        sample_depth st (depth - 1) codom
-        |> Option.map (fun ret -> Rval.Fun { doms = List.map fst arrows ; ret })))
+        (* With no possible result, it can only fail. *)
+        if Ty.is_empty codom then Some (Rval.Fun { doms ; ret = None })
+        else sample_depth st (depth - 1) codom
+             |> Option.map (fun ret -> Rval.Fun { doms ; ret = Some ret })))
 
 and gen_list st depth c =
   let lines = try Lst.destruct (Ty.cap c Lst.any) with Invalid_argument _ -> [] in
@@ -271,19 +272,119 @@ let default_depth = 3
 
 let sample ?(depth = default_depth) st ty = sample_depth st depth ty
 
-(* An instance of a polymorphic type that keeps it inhabited may still have
-   no value the generator can build (a variable instantiated by a bare mode
-   outside of [v(..)], say): draw another instance, up to [inst_tries]
-   times. Returns the instance with the value. *)
+(* An instance may still have no value the generator can build: draw
+   another one, up to [inst_tries] times. Returns the instance with the
+   value. *)
 let inst_tries = 5
 
-let sample_poly ?depth ?within st ty =
+let retry_instances ?ok st ty f =
   let rec loop n =
     if n = 0 then None
     else
-      let ty', s = instantiate ?within st ty in
-      match sample ?depth st ty' with
-      | Some v -> Some (s, v)
-      | None -> if Ty.vars ty |> VarSet.is_empty then None else loop (n - 1)
+      let ty', s = instantiate ?ok st ty in
+      match f ty' with
+      | Some x -> Some (s, x)
+      | None -> if VarSet.is_empty (Ty.vars ty) then None else loop (n - 1)
   in
   loop inst_tries
+
+let sample_poly ?depth st ty =
+  retry_instances ~ok:(fun t -> not (Ty.is_empty t)) st ty (sample ?depth st)
+
+(* ===== Argument lists ===== *)
+
+(* The arguments of a call, in the order they are passed: the positional
+   ones, then the named ones. *)
+type call = { pos : Rval.t list ; named : (string * Rval.t) list }
+
+(* As R source: a list, for the harness to [do.call]. *)
+let call_to_r c =
+  Rval.to_r (Rval.List (List.map (fun v -> None, v) c.pos
+                        @ List.map (fun (n, v) -> Some n, v) c.named))
+
+let absent = Ty.F.mk_descr Ty.O.absent
+
+(* The call-site type of the arguments: exactly these, no other. *)
+let call_type c =
+  let f v = Ty.F.mk_descr (Ty.O.required (Rval.to_valty v).ty) in
+  Arg.mk' { pos' = List.map f c.pos ; pos_tl' = absent ;
+            named' = List.map (fun (n, v) -> n, f v) c.named ; named_tl' = absent }
+
+let rec split_at n l =
+  if n = 0 then [], l
+  else match l with [] -> [], [] | x :: l -> let a, b = split_at (n - 1) l in x :: a, b
+
+exception No_value
+
+let value st ty =
+  if Ty.is_empty ty then raise No_value
+  else match sample st ty with Some v -> v | None -> raise No_value
+
+(* [k] values (up to 2) for the extra arguments [...] accepts, if any. *)
+let extras st f =
+  let ty, _ = field f in
+  if Ty.is_empty ty then [] else List.init (Random.State.int st 3) (fun _ -> value st ty)
+
+(* Arguments for a definition-site signature. The first [i] parameters are
+   passed by position, the others by name, or not at all when they are
+   optional; extra positional arguments only fit when every parameter
+   before [...] is passed by position (as in [Arg.mk]). With [positional]
+   (the [.Call] entry points), every parameter is passed by position. *)
+let call_of_def st ~positional (a : (string, Ty.F.t) Arg.atom) =
+  let n = List.length a.pos_named in
+  let i = if positional then n else Random.State.int st (n + 1) in
+  let by_pos, by_name = split_at i a.pos_named in
+  let pos = by_pos |> List.map (fun (_, f) -> value st (fst (field f))) in
+  let named = by_name @ a.named |> List.filter_map (fun (name, f) ->
+    let ty, opt = field f in
+    if opt && (Ty.is_empty ty || coin st) then None else Some (name, value st ty)) in
+  let extra_pos = if i = n && not positional then extras st a.pos_tl else [] in
+  let extra_named =
+    if positional then []
+    else extras st a.named_tl |> List.mapi (fun k v -> Printf.sprintf "fuzz_dot%d" (k + 1), v) in
+  { pos = pos @ extra_pos ; named = named @ extra_named }
+
+(* Arguments for a call-site signature (a domain inference left as such). *)
+let call_of_callsite st (a : (string, Ty.F.t) Arg.atom') =
+  let present f = let ty, opt = field f in
+    if opt && (Ty.is_empty ty || coin st) then None else Some (value st ty) in
+  let rec prefix = function
+    | [] -> []
+    | f :: fs -> (match present f with None -> [] | Some v -> v :: prefix fs) in
+  { pos = prefix a.pos' ;
+    named = a.named' |> List.filter_map (fun (n, f) -> present f |> Option.map (fun v -> n, v)) }
+
+(* A call drawn for the function type [fty] (the type of a closure, or the
+   content of one), with the type of the result it must have. *)
+type sample = {
+  subst : Subst.t ;           (* the instance of the type variables *)
+  call : call ;
+  expected : Ty.t ;           (* the result type for these arguments *)
+}
+
+let gen_call ?(positional = false) st fty =
+  let content = if Ty.leq fty Attr.any then Attr.proj_content fty else fty in
+  let attempt content =
+    let dom = Mlsem.Types.Arrow.domain content in
+    let atoms = Mlsem.Types.Arrow.dnf content |> List.concat
+                |> List.concat_map (fun (d, _) -> try Arg.destruct d with Invalid_argument _ -> []) in
+    let rec loop n =
+      if n = 0 then None
+      else match pick st atoms with
+        | None -> None
+        | Some atom ->
+          let call =
+            try Some (match atom with
+                | Arg.DefSite a -> call_of_def st ~positional a
+                | Arg.CallSite a -> call_of_callsite st a)
+            with No_value -> None in
+          match call with
+          | Some call when Ty.leq (call_type call) dom ->
+            Some (call, Mlsem.Types.Arrow.apply content (call_type call))
+          | _ -> loop (n - 1)
+    in
+    loop tries
+  in
+  let ok t = not (Ty.is_empty (Mlsem.Types.Arrow.domain t)) in
+  retry_instances ~ok st content attempt
+  |> Option.map (fun (subst, (call, expected)) -> { subst ; call ; expected })

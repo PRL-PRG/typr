@@ -74,6 +74,10 @@ quote(f(x, 1))
   : lang<> with {  }
 function(...) 1
   : arrow<> with {  }  (inexact)
+function(...) stop("fuzz: no value")
+  : arrow<> with {  }  (inexact)
+new("externalptr")
+  : externalptr<> with {  }
 structure(1L, "levels" = "a", class = "factor")
   : 1L<factor> with { levels: "a"<> with {  } }
 structure(c(1, 2), "names" = c("a", "b"))
