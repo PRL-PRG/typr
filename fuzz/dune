@@ -1,0 +1,8 @@
+; The R side of the fuzzer (lib/fuzz.ml runs it): the harness, and the value
+; descriptions it shares with the tests of lib/valty.ml and lib/rval.ml.
+; Installed like the prelude, for the image.
+
+(install
+ (section share)
+ (package typr)
+ (files describe.R harness.R))

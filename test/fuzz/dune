@@ -82,3 +82,30 @@
     mutate_check.output
     (run %{exe:mutate_test.exe} --compare mutate_cases.jsonl mutate_descs.jsonl))
    (diff mutate_check.expected mutate_check.output))))
+
+; The harness, on base functions and a .Call entry point of stats. A run on
+; results that end with a started sample resumes after it, as after a crash:
+; native sample 1 is such a sample.
+(rule
+ (alias fuzz-r)
+ (deps
+  harness_samples.jsonl
+  harness_native.jsonl
+  harness_check.R
+  %{project_root}/fuzz/describe.R
+  %{project_root}/fuzz/harness.R)
+ (action
+  (progn
+   (with-stdout-to
+    harness_native_results.jsonl
+    (echo "{\"id\":1,\"start\":true}\n"))
+   (run Rscript %{project_root}/fuzz/harness.R %{project_root}/fuzz/describe.R
+    base harness_samples.jsonl harness_base.jsonl 1)
+   (run Rscript %{project_root}/fuzz/harness.R %{project_root}/fuzz/describe.R
+    stats harness_native.jsonl harness_native_results.jsonl 1)
+   (with-stdout-to
+    harness_check.output
+    (progn
+     (run Rscript harness_check.R harness_base.jsonl)
+     (run Rscript harness_check.R harness_native_results.jsonl)))
+   (diff harness_check.expected harness_check.output))))
