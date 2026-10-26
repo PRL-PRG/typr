@@ -6,8 +6,11 @@
     value belongs to [t]" is decided by subtyping against [t].
 
     The description of a value is an object whose ["t"] field gives its kind:
-    - ["null"], ["env"], ["sym"], ["lang"], ["extptr"], ["closure"],
-      ["builtin"]: no further field;
+    - ["null"], ["env"], ["sym"], ["lang"], ["pairlist"], ["extptr"],
+      ["closure"], ["builtin"]: no further field; ["other"] for the remaining
+      R types (S4 objects, [...] objects, ...), with their [typeof] in
+      ["type"]. Pairlists are typed as calls, as NativeSem does ([LISTSXP] in
+      its [base.ty]);
     - ["vec"]: ["mode"] (one of [lgl], [int], [dbl], [clx], [chr], [raw]) and
       ["len"]. A vector of length 1 also has ["na"], and when it is not [NA]
       its element in ["x"]: an integer for [int], and for an integer-valued
@@ -26,7 +29,8 @@
     mode and length other than 1, which is exact: no type tells two of them
     apart. Some values have types that over-approximate them, and a failed
     subtyping check on them proves nothing. The result says so in [exact]:
-    - closures and builtins, typed as any function;
+    - closures and builtins, typed as any function, and other values, typed
+      as [any];
     - lists with unnamed elements: all of them go to the list's tail, which
       does not count them, so [list(1)] gets the type of [list()] as well;
     - lists with duplicated names, of which the encoding keeps one;
@@ -87,6 +91,9 @@ let scalar_prim mode d =
     match mode, x with
     | "int", _ -> Prim.Int.int' (to_int "x" x), true
     | "dbl", `Int i -> Prim.Dbl.int' i, true
+    (* JSON writers may print a large integer-valued double in exponent form. *)
+    | "dbl", `Float f when Float.is_integer f && Float.abs f < 9007199254740992. ->
+      Prim.Dbl.int' (int_of_float f), true
     | "dbl", `String "_" -> dbl_nonint, true
     | "dbl", `String "big" -> any', false
     | "chr", `String s -> Prim.Chr.str' s, true
@@ -130,9 +137,10 @@ let rec of_json d =
       | "list" -> list d
       | "env" -> Env.any, true
       | "sym" -> Sym.any, true
-      | "lang" -> Lang.any, true
+      | "lang" | "pairlist" -> Lang.any, true
       | "extptr" -> ExternalPtr.any, true
       | "closure" | "builtin" -> Arrows.any |> Descr.mk_arrows |> Ty.mk_descr, false
+      | "other" -> Ty.any, false
       | k -> bad "unknown value kind %s" k
     in
     let attrs, attrs_exact = named_fields (field "attrs" d) in

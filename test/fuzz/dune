@@ -3,4 +3,31 @@
 
 (test
  (name valty_test)
+ (modules valty_test)
  (libraries typr rsem.lang mlsem rstt yojson))
+
+(test
+ (name rval_test)
+ (modules rval_test)
+ (libraries typr rsem.lang mlsem rstt yojson))
+
+; The tests that need R (with jsonlite) are in the fuzz-r alias, out of the
+; default runtest: `dune build @fuzz-r`.
+
+(rule
+ (alias fuzz-r)
+ (deps
+  rval_check.R
+  %{project_root}/fuzz/describe.R)
+ (action
+  (progn
+   (with-stdout-to
+    rval_cases.jsonl
+    (run %{exe:rval_test.exe} --cases))
+   (with-stdout-to
+    rval_descs.jsonl
+    (run Rscript rval_check.R %{project_root}/fuzz/describe.R rval_cases.jsonl))
+   (with-stdout-to
+    rval_check.output
+    (run %{exe:rval_test.exe} --compare rval_cases.jsonl rval_descs.jsonl))
+   (diff rval_check.expected rval_check.output))))

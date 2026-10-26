@@ -71,3 +71,7 @@ function(x) x : arrow<> with {  }  (inexact)
 new.env() : env<> with {  }
   env                        in
   null                       out
+pairlist(a = 1) : lang<> with { names: "a"<> with {  } }
+  lang                       in
+  list                       out
+  null                       out

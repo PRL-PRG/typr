@@ -41,6 +41,9 @@ let cases = [
   ["any"; "(x: any) -> any"; "int"] ;
   "new.env()", {|{"t":"env"}|},
   ["env"; "null"] ;
+  "pairlist(a = 1)",
+  {|{"t":"pairlist","attrs":{"names":{"t":"vec","mode":"chr","len":1,"na":false,"x":"a"}}}|},
+  ["lang"; "list"; "null"] ;
 ]
 
 let verdict = function Typr.Valty.In -> "in" | Out -> "out" | Unknown -> "unknown"

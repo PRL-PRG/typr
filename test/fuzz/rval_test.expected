@@ -1,0 +1,86 @@
+NULL
+  : null
+TRUE
+  : tt<> with {  }
+NA
+  : (LGL1 \ ^LGL1)<> with {  }
+c(FALSE, NA, TRUE)
+  : (LGL & ~vec1)<> with {  }
+3L
+  : 3L<> with {  }
+-3L
+  : -3L<> with {  }
+NA_integer_
+  : (INT1 \ ^INT1)<> with {  }
+integer(0)
+  : (INT & ~vec1)<> with {  }
+c(1L, 2L, NA_integer_, 4L, 5L)
+  : (INT & ~vec1)<> with {  }
+42
+  : 42.<> with {  }
+-0.5
+  : (^DBL1 \ (..))<> with {  }
+1000000000000000
+  : 1000000000000000.<> with {  }
+1.0000000000000001e+300
+  : ^DBL1<> with {  }  (inexact)
+NaN
+  : (^DBL1 \ (..))<> with {  }
+Inf
+  : (^DBL1 \ (..))<> with {  }
+-Inf
+  : (^DBL1 \ (..))<> with {  }
+NA_real_
+  : (DBL1 \ ^DBL1)<> with {  }
+c(1, 2.5)
+  : (DBL & ~vec1)<> with {  }
+complex(real = 1, imaginary = -2)
+  : ^CLX1<> with {  }
+NA_complex_
+  : (CLX1 \ ^CLX1)<> with {  }
+"a"
+  : "a"<> with {  }
+""
+  : ""<> with {  }
+"NA"
+  : "NA"<> with {  }
+"say \"hi\"\\n\n\t"
+  : "say \"hi\"\\n\n\t"<> with {  }
+"été"
+  : "\195\169t\195\169"<> with {  }
+NA_character_
+  : (CHR1 \ ^CHR1)<> with {  }
+c("a", "b")
+  : (CHR & ~vec1)<> with {  }
+as.raw(c(255))
+  : ^raw1<> with {  }
+as.raw(c(0, 1))
+  : (raw & ~vec1)<> with {  }
+raw(0)
+  : (raw & ~vec1)<> with {  }
+list()
+  : {  }<> with {  }
+list(1)
+  : { 1.<> with {  } }<> with {  }  (inexact)
+list("a" = 1, "x")
+  : { a: 1.<> with {  }, "x"<> with {  } }<> with { names: (CHR & ~vec1)<> with {  } }  (inexact)
+list("a b" = list("c" = NULL))
+  : { a b: { c: null }<> with { names: "c"<> with {  } } }<> with { names: "a b"<> with {  } }
+new.env()
+  : env<> with {  }
+as.name("x")
+  : sym<> with {  }
+quote(f(x, 1))
+  : lang<> with {  }
+function(...) 1
+  : arrow<> with {  }  (inexact)
+structure(1L, "levels" = "a", class = "factor")
+  : 1L<factor> with { levels: "a"<> with {  } }
+structure(c(1, 2), "names" = c("a", "b"))
+  : (DBL & ~vec1)<> with { names: (CHR & ~vec1)<> with {  } }
+structure(c(1L, 2L, 3L, 4L), "dim" = c(2L, 2L))
+  : (INT & ~vec1)<> with { dim: (INT & ~vec1)<> with {  } }
+structure(list("x" = 1), class = c("foo", "bar"))
+  : { x: 1.<> with {  } }<foo, bar> with { names: "x"<> with {  } }
+structure(new.env(), class = "R6")
+  : env<R6> with {  }
