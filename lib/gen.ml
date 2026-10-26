@@ -47,20 +47,27 @@ let row_pool = [ Row.all_fields (Ty.F.mk_descr Ty.O.absent) ; Row.any ]
    attributes. *)
 let r_values = Ty.disj [ Null.any ; Sym.any ; Attr.any ]
 
+(* The variables to instantiate: not those Rstt uses for the identity of
+   polymorphic signatures. *)
+let instance_vars ty = VarSet.diff (Ty.vars ty) (Arg.polymorphic_vars ())
+
+(* Whether the variable [v] of [ty] stands for an R value: when substituting
+   it with all of them changes [ty] (compared with substituting nothing).
+   Otherwise it only occurs under [v(..)], where [Prim.any] absorbs the
+   substitution, and it stands for a mode. *)
+let stands_for_value ty v =
+  let sub inst = Subst.apply (Subst.singleton1 v inst) ty in
+  not (Ty.equiv (sub r_values) (sub Ty.empty))
+
 (* A substitution of every variable of [ty], each drawn from the pool that
-   fits its occurrences. A variable stands for an R value when substituting
-   it with all of them changes [ty] (compared with substituting nothing);
-   otherwise it only occurs under [v(..)], where [Prim.any] absorbs the
-   substitution, and it stands for a mode. The variables Rstt uses for the
-   identity of polymorphic signatures are left alone. Each instance is
-   drawn among those after which [ty] still satisfies [ok], if any: a
-   variable in [x: 'a & null] can only be [null]. *)
+   fits its occurrences. Each instance is drawn among those after which
+   [ty] still satisfies [ok], if any: a variable in [x: 'a & null] can only
+   be [null]. *)
 let instantiate ?(ok = fun _ -> true) st ty =
-  let vars = VarSet.diff (Ty.vars ty) (Arg.polymorphic_vars ()) in
   let ty, s1 =
-    vars |> VarSet.elements |> List.fold_left (fun (ty, s) v ->
+    instance_vars ty |> VarSet.elements |> List.fold_left (fun (ty, s) v ->
       let sub inst = Subst.apply (Subst.singleton1 v inst) ty in
-      let pool = if Ty.equiv (sub r_values) (sub Ty.empty) then prim_pool else value_pool in
+      let pool = if stands_for_value ty v then value_pool else prim_pool in
       let pool = match List.filter (fun i -> ok (sub i)) pool with [] -> pool | p -> p in
       let inst = Option.get (pick st pool) in
       sub inst, (v, inst) :: s) (ty, [])
@@ -71,6 +78,16 @@ let instantiate ?(ok = fun _ -> true) st ty =
       Subst.apply (Subst.singleton2 v inst) ty, (v, inst) :: s) (ty, [])
   in
   ty, Subst.of_list (List.rev s1) (List.rev s2)
+
+(* [ty] with every variable replaced by its largest instance: for a
+   domain, where the variables occur positively, the union of the domains
+   of all the instances. *)
+let top_instance ty =
+  let ty = instance_vars ty |> VarSet.elements |> List.fold_left (fun ty v ->
+    let inst = if stands_for_value ty v then r_values else Prim.any in
+    Subst.apply (Subst.singleton1 v inst) ty) ty in
+  Ty.row_vars ty |> RowVarSet.elements |> List.fold_left (fun ty v ->
+    Subst.apply (Subst.singleton2 v Row.any) ty) ty
 
 (* ===== Fields ===== *)
 
@@ -294,8 +311,9 @@ let sample_poly ?depth st ty =
 (* ===== Argument lists ===== *)
 
 (* The arguments of a call, in the order they are passed: the positional
-   ones, then the named ones. *)
-type call = { pos : Rval.t list ; named : (string * Rval.t) list }
+   ones, then the named ones; and the parameters the first positional ones
+   are passed to, when known. *)
+type call = { pos : Rval.t list ; named : (string * Rval.t) list ; pos_names : string list }
 
 (* As R source: a list, for the harness to [do.call]. *)
 let call_to_r c =
@@ -342,7 +360,7 @@ let call_of_def st ~positional (a : (string, Ty.F.t) Arg.atom) =
   let extra_named =
     if positional then []
     else extras st a.named_tl |> List.mapi (fun k v -> Printf.sprintf "fuzz_dot%d" (k + 1), v) in
-  { pos = pos @ extra_pos ; named = named @ extra_named }
+  { pos = pos @ extra_pos ; named = named @ extra_named ; pos_names = List.map fst by_pos }
 
 (* Arguments for a call-site signature (a domain inference left as such). *)
 let call_of_callsite st (a : (string, Ty.F.t) Arg.atom') =
@@ -352,7 +370,8 @@ let call_of_callsite st (a : (string, Ty.F.t) Arg.atom') =
     | [] -> []
     | f :: fs -> (match present f with None -> [] | Some v -> v :: prefix fs) in
   { pos = prefix a.pos' ;
-    named = a.named' |> List.filter_map (fun (n, f) -> present f |> Option.map (fun v -> n, v)) }
+    named = a.named' |> List.filter_map (fun (n, f) -> present f |> Option.map (fun v -> n, v)) ;
+    pos_names = [] }
 
 (* A call drawn for the function type [fty] (the type of a closure, or the
    content of one), with the type of the result it must have. *)

@@ -59,3 +59,26 @@
     gen_check.output
     (run %{exe:gen_test.exe} --compare gen_cases.jsonl gen_descs.jsonl))
    (diff gen_check.expected gen_check.output))))
+
+(test
+ (name mutate_test)
+ (modules mutate_test)
+ (libraries typr rsem.lang mlsem rstt yojson))
+
+(rule
+ (alias fuzz-r)
+ (deps
+  rval_check.R
+  %{project_root}/fuzz/describe.R)
+ (action
+  (progn
+   (with-stdout-to
+    mutate_cases.jsonl
+    (run %{exe:mutate_test.exe} --cases))
+   (with-stdout-to
+    mutate_descs.jsonl
+    (run Rscript rval_check.R %{project_root}/fuzz/describe.R mutate_cases.jsonl))
+   (with-stdout-to
+    mutate_check.output
+    (run %{exe:mutate_test.exe} --compare mutate_cases.jsonl mutate_descs.jsonl))
+   (diff mutate_check.expected mutate_check.output))))
