@@ -77,14 +77,39 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
+# R comes from CRAN's Ubuntu repository, and the CRAN packages from r2u
+# (https://eddelbuettel.github.io/r2u): binaries, with their system
+# dependencies, so that r-typing can install the packages it fuzzes and what
+# they depend on without compiling it all. Jammy's own R is 4.1.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      wget ca-certificates gnupg \
+    && wget -q -O /etc/apt/trusted.gpg.d/cranapt_key.asc \
+         https://eddelbuettel.github.io/r2u/assets/dirk_eddelbuettel_key.asc \
+    && echo "deb [arch=amd64] https://r2u.stat.illinois.edu/ubuntu jammy main" \
+         > /etc/apt/sources.list.d/cranapt.list \
+    && wget -q -O /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc \
+         https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
+    && echo "deb [arch=amd64] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" \
+         > /etc/apt/sources.list.d/cran_r.list \
+    && printf 'Package: *\nPin: release o=CRAN-Apt Project\nPin: release l=CRAN-Apt Packages\nPin-Priority: 700\n' \
+         > /etc/apt/preferences.d/99cranapt \
+    && rm -rf /var/lib/apt/lists/*
+
 # gcc + libc6-dev: the checker preprocesses the package's real `#include <...>`
 # and asks the system compiler where its headers live.
-# r-cran-jsonlite: r-typing's parse_output.R reads the JSONL report.
+# r-cran-jsonlite: r-typing's parse_output.R reads the JSONL report, and the
+# fuzzing harness writes JSON with it.
 # universal-ctags: r-typing's per-package pages locate definitions with it.
-RUN apt-get update && apt-get install -y \
+# For fuzzing: r-base-dev and gfortran build the packages' native code;
+# r-cran-bspm makes install.packages take r2u's binaries, once enabled
+# (bspm::enable(); not in Rprofile.site, which every Rscript, the harness
+# included, would then load); bubblewrap is the sandbox the calls run in.
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libstdc++6 bc git parallel \
     gcc libc6-dev \
-    r-base r-cran-jsonlite universal-ctags \
+    r-base-core r-base-dev gfortran r-cran-jsonlite r-cran-bspm \
+    python3-dbus python3-gi python3-apt \
+    universal-ctags bubblewrap \
     && rm -rf /var/lib/apt/lists/*
 
 # Keep the _build/default/bin/main.exe path run_one_package.sh expects.
@@ -96,6 +121,11 @@ COPY --from=builder /home/opam/typr/_build/default/bin/main.exe /checker/_build/
 COPY --from=builder /home/opam/typr/nativesem/types /checker/types
 COPY --from=builder /home/opam/typr/Rsem/sigs/base.R /checker/prelude/base.R
 
+# The fuzzing harness, where --fuzz-harness looks by default: fuzz/ next to
+# the binary's bin/.
+COPY --from=builder /home/opam/typr/fuzz/harness.R /home/opam/typr/fuzz/describe.R \
+     /checker/_build/default/fuzz/
+
 COPY --from=builder /home/opam/r-parser/core/tree-sitter/lib/libtree-sitter.so* /usr/local/lib/
 RUN ldconfig
 
@@ -104,6 +134,7 @@ ENV CHECKER_DIR=/checker
 ENV CHECKER=/checker/_build/default/bin/main.exe
 ENV TS_LIB_DIR=/usr/local/lib
 ENV TYPR_PRELUDE=/checker/prelude/base.R
+ENV TYPR_FUZZ_HARNESS=/checker/_build/default/fuzz
 
 # Provenance: which commits this image was built from, and whether the
 # submodules were at their pinned SHAs or refreshed to their branches. The
