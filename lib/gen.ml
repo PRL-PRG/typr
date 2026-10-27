@@ -32,11 +32,24 @@ let coin st = Random.State.bool st
    before, and on which definitions timed out. Drawing from them as they
    come, the values drawn for a type would change from a run to the next.
    They are sorted first, by printed form, which is canonical. *)
-let canonical key l =
-  List.map (fun x -> key x, x) l
-  |> List.stable_sort (fun (a, _) (b, _) -> String.compare a b) |> List.map snd
+let canonical key = function
+  | ([] | [_]) as l -> l
+  | l ->
+    List.map (fun x -> key x, x) l
+    |> List.stable_sort (fun (a, _) (b, _) -> String.compare a b) |> List.map snd
 
-let show ty = Format.asprintf "%a" Mlsem.Types.Ty.pp ty
+(* Printing is costly, and the generator takes the same types apart again
+   and again: the printed forms are kept. *)
+module TyTbl = Hashtbl.Make (struct type t = Ty.t let equal = Ty.equal let hash = Ty.hash end)
+
+let shown = TyTbl.create 1024
+
+let show ty =
+  match TyTbl.find_opt shown ty with
+  | Some s -> s
+  | None ->
+    let s = Format.asprintf "%a" Mlsem.Types.Ty.pp ty in
+    TyTbl.add shown ty s ; s
 
 (* Variables by name: the variables of the inferred types are named after
    the parameters they stand for. *)
