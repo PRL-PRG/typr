@@ -92,10 +92,12 @@
   (glob_files %{project_root}/types/*.ty)
   prelude/base.R
   (source_tree packages/prettyunits))
+ ; As in the dashboard (r-typing's FUN_TIMEOUT): pretty_p_value takes
+ ; exponential time to fail since the prelude declares is.numeric.
  (action
   (with-stdout-to
    prettyunits.output
-   (run %{exe:../bin/main.exe} --prelude prelude/base.R packages/prettyunits))))
+   (run %{exe:../bin/main.exe} --timeout 20 --prelude prelude/base.R packages/prettyunits))))
 
 (rule
  (alias runtest)

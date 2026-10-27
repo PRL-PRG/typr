@@ -13,8 +13,8 @@ Line 49, characters 7-8
 name: t
 
 pretty_color: Untypeable: unbound variable
-Line 16, characters 8-17
-name: is.factor
+Line 18, characters 17-24
+name: col2rgb
 
 pretty_colour: Untypeable: unbound variable
 Line 32, characters 17-29
@@ -34,25 +34,26 @@ name: format_num
 
 
 ===== packages/prettyunits/R/numbers.R =====
-format_num: Untypeable: unbound variable
-Line 7, characters 6-15
-name: match.arg
+format_num: Untypeable: untypeable projection
+Line 13, characters 4-9
+argument: null | 'I446
 
 
 ===== packages/prettyunits/R/rounding.R =====
-pretty_round: Untypeable: unbound variable
-Line 21, characters 19-25
-name: is.nan
+pretty_round: Untypeable: untypeable encoding
+Line 29, characters 26-54
+application of base::as.character failed
+argument is of type @(v('I640))
 
-pretty_signif: Untypeable: unbound variable
-Line 85, characters 17-23
-name: is.nan
+pretty_signif: Untypeable: untypeable encoding
+Line 93, characters 24-52
+application of base::as.character failed
+argument is of type @(v('I878))
 
 
 ===== packages/prettyunits/R/p-value.R =====
-pretty_p_value: Untypeable: unbound variable
-Line 13, characters 34-43
-name: is.factor
+pretty_p_value:
+timeout: inference/checking exceeded 20 seconds
 
 
 ===== packages/prettyunits/R/pretty-package.R =====
@@ -70,9 +71,9 @@ name: format_bytes
 
 
 ===== packages/prettyunits/R/sizes.R =====
-format_bytes: Untypeable: unbound variable
-Line 7, characters 6-15
-name: match.arg
+format_bytes: Untypeable: untypeable projection
+Line 13, characters 4-9
+argument: null | 'I1148
 
 
 ===== packages/prettyunits/R/xtime-ago.R =====
