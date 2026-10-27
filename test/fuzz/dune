@@ -1,0 +1,137 @@
+; ===== Fuzzing =====
+; Unit tests of the fuzzing modules: no package is type-checked.
+
+(test
+ (name valty_test)
+ (modules valty_test)
+ (libraries typr rsem.lang mlsem rstt yojson))
+
+(test
+ (name rval_test)
+ (modules rval_test)
+ (libraries typr rsem.lang mlsem rstt yojson))
+
+(test
+ (name gen_test)
+ (modules gen_test)
+ (libraries typr rsem.lang mlsem rstt))
+
+(test
+ (name call_test)
+ (modules call_test)
+ (libraries typr rsem.lang mlsem rstt))
+
+; The tests that need R (with jsonlite) are in the fuzz-r alias, out of the
+; default runtest: `dune build @fuzz-r`.
+
+(rule
+ (alias fuzz-r)
+ (deps
+  rval_check.R
+  %{project_root}/fuzz/describe.R)
+ (action
+  (progn
+   (with-stdout-to
+    rval_cases.jsonl
+    (run %{exe:rval_test.exe} --cases))
+   (with-stdout-to
+    rval_descs.jsonl
+    (run Rscript rval_check.R %{project_root}/fuzz/describe.R rval_cases.jsonl))
+   (with-stdout-to
+    rval_check.output
+    (run %{exe:rval_test.exe} --compare rval_cases.jsonl rval_descs.jsonl))
+   (diff rval_check.expected rval_check.output))))
+
+(rule
+ (alias fuzz-r)
+ (deps
+  rval_check.R
+  %{project_root}/fuzz/describe.R)
+ (action
+  (progn
+   (with-stdout-to
+    gen_cases.jsonl
+    (run %{exe:gen_test.exe} --cases))
+   (with-stdout-to
+    gen_descs.jsonl
+    (run Rscript rval_check.R %{project_root}/fuzz/describe.R gen_cases.jsonl))
+   (with-stdout-to
+    gen_check.output
+    (run %{exe:gen_test.exe} --compare gen_cases.jsonl gen_descs.jsonl))
+   (diff gen_check.expected gen_check.output))))
+
+(test
+ (name mutate_test)
+ (modules mutate_test)
+ (libraries typr rsem.lang mlsem rstt yojson))
+
+(rule
+ (alias fuzz-r)
+ (deps
+  rval_check.R
+  %{project_root}/fuzz/describe.R)
+ (action
+  (progn
+   (with-stdout-to
+    mutate_cases.jsonl
+    (run %{exe:mutate_test.exe} --cases))
+   (with-stdout-to
+    mutate_descs.jsonl
+    (run Rscript rval_check.R %{project_root}/fuzz/describe.R mutate_cases.jsonl))
+   (with-stdout-to
+    mutate_check.output
+    (run %{exe:mutate_test.exe} --compare mutate_cases.jsonl mutate_descs.jsonl))
+   (diff mutate_check.expected mutate_check.output))))
+
+; The harness, on base functions and a .Call entry point of stats. A run on
+; results that end with a started sample resumes after it, as after a crash:
+; native sample 1 is such a sample.
+(rule
+ (alias fuzz-r)
+ (deps
+  harness_samples.jsonl
+  harness_native.jsonl
+  harness_check.R
+  %{project_root}/fuzz/describe.R
+  %{project_root}/fuzz/harness.R)
+ (action
+  (progn
+   (with-stdout-to
+    harness_native_results.jsonl
+    (echo "{\"id\":1,\"start\":true}\n"))
+   (run Rscript %{project_root}/fuzz/harness.R %{project_root}/fuzz/describe.R
+    base harness_samples.jsonl harness_base.jsonl 1)
+   (run Rscript %{project_root}/fuzz/harness.R %{project_root}/fuzz/describe.R
+    stats harness_native.jsonl harness_native_results.jsonl 1)
+   (with-stdout-to
+    harness_check.output
+    (progn
+     (run Rscript harness_check.R harness_base.jsonl)
+     (run Rscript harness_check.R harness_native_results.jsonl)))
+   (diff harness_check.expected harness_check.output))))
+
+; Fuzzing a package end to end: fuzzpkg, installed in a library of its own,
+; type-checked with the wrong signature of wrong_sig.R, of which fuzzing must
+; find the consequence: parse_int is unsound.
+(rule
+ (alias fuzz-r)
+ (deps
+  (glob_files %{project_root}/types/*.ty)
+  ../prelude/base.R
+  wrong_sig.R
+  (source_tree fuzzpkg)
+  %{project_root}/fuzz/describe.R
+  %{project_root}/fuzz/harness.R)
+ (action
+  (progn
+   (system
+    "rm -rf fuzzlib fuzzout && mkdir fuzzlib && R CMD INSTALL --no-test-load --library=fuzzlib fuzzpkg > install.log 2>&1")
+   (with-stdout-to
+    fuzzpkg.output
+    (setenv
+     R_LIBS
+     fuzzlib
+     (run %{exe:../../bin/main.exe} --prelude ../prelude/base.R --prelude wrong_sig.R
+      --fuzz-runner Rscript --fuzz-harness %{project_root}/fuzz --fuzz-dir fuzzout
+      fuzzpkg)))
+   (diff fuzzpkg.expected fuzzpkg.output))))

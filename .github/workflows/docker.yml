@@ -9,9 +9,11 @@ name: Docker
 # run with `pinned`; it moves the `pinned` tag and leaves `latest` alone, so a
 # reproducible image exists without the pins having to follow every upstream
 # push. Either way the image records the four commits it was built from.
+# A push to the `fuzz` branch builds the `fuzz` tag only, for r-typing's
+# fuzzing runs: it neither moves `latest` nor notifies r-typing.
 on:
   push:
-    branches: [main]
+    branches: [main, fuzz]
   repository_dispatch:
     types: [dependency-updated]
   workflow_dispatch:
@@ -78,10 +80,11 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/typr
           tags: |
-            type=raw,value=latest,enable=${{ steps.pins.outputs.pinned == 'false' }}
-            type=raw,value=pinned,enable=${{ steps.pins.outputs.pinned == 'true' }}
-            type=sha,prefix=sha-,enable=${{ steps.pins.outputs.pinned == 'false' }}
-            type=sha,prefix=pinned-sha-,enable=${{ steps.pins.outputs.pinned == 'true' }}
+            type=raw,value=latest,enable=${{ steps.pins.outputs.pinned == 'false' && github.ref == 'refs/heads/main' }}
+            type=raw,value=pinned,enable=${{ steps.pins.outputs.pinned == 'true' && github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-,enable=${{ steps.pins.outputs.pinned == 'false' && github.ref == 'refs/heads/main' }}
+            type=sha,prefix=pinned-sha-,enable=${{ steps.pins.outputs.pinned == 'true' && github.ref == 'refs/heads/main' }}
+            type=raw,value=fuzz,enable=${{ github.ref == 'refs/heads/fuzz' }}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -106,7 +109,7 @@ jobs:
       # PIPELINE_DISPATCH_TOKEN; until it exists this step fails without
       # failing the build.
       - name: Trigger r-typing pipeline
-        if: steps.pins.outputs.pinned == 'false'
+        if: steps.pins.outputs.pinned == 'false' && github.ref == 'refs/heads/main'
         uses: peter-evans/repository-dispatch@v4
         continue-on-error: true
         with:

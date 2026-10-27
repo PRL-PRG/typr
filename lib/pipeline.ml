@@ -30,6 +30,8 @@ type options = {
   deps_only : bool ;
   (* Where to write the machine-readable account of the run, if anywhere. *)
   report : string option ;
+  (* Fuzz the inferred types of the package's functions (see {!Fuzz}). *)
+  fuzz : Fuzz.options option ;
 }
 
 let default_native_options : R_c_typing.Runner.cmd_options = {
@@ -41,7 +43,7 @@ let default_native_options : R_c_typing.Runner.cmd_options = {
 
 let default_options =
   { native = default_native_options ; prelude = [] ; include_dirs = [] ;
-    timeout = None ; gradual = false ; deps_only = false ; report = None }
+    timeout = None ; gradual = false ; deps_only = false ; report = None ; fuzz = None }
 
 (* NativeSem has a per-function timeout of its own, for when it is used as a
    standalone CLI. Driven from here the policy comes from [Timeout.guard]
@@ -51,8 +53,13 @@ let native_options opts = { opts.native with timeout = None }
 
 (* ===== Reporting ===== *)
 
-(* The report handle, plus the counters the [summary] record is made of. *)
-type rep = { r : Report.t ; stats : (string, int) Hashtbl.t }
+(* The report handle, plus the counters the [summary] record is made of,
+   and, when fuzzing, the typed functions of the package (latest first). *)
+type rep = { r : Report.t ; stats : (string, int) Hashtbl.t ;
+             fuzzing : bool ; mutable typed : Fuzz.target list }
+
+let add_typed rep name symbol gty =
+  if rep.fuzzing then rep.typed <- Fuzz.target_of_gty name symbol gty :: rep.typed
 
 let emit rep kind fields = Report.emit rep.r kind fields
 
@@ -329,7 +336,9 @@ let process_r_file ?timeout rep ~role ~defined ~native_syms ctx f =
     let typed_as n ctx' =
       match Driver.find ctx' n with
       | Some tys ->
-        let ty = TyScheme.get tys |> snd |> GTy.ub in
+        let gty = TyScheme.get tys |> snd in
+        if role = "package" then add_typed rep n None gty ;
+        let ty = GTy.ub gty in
         Some (R.one_line TyScheme.pp_short tys, R.degenerate ty)
       | None -> None
     in
@@ -715,7 +724,8 @@ let report_deps opts (pkg : Pkg.t) entry_points files =
 let run opts root =
   Driver.gradual := opts.gradual ;
   let module R = Report in
-  let rep = { r = R.create opts.report ; stats = Hashtbl.create 32 } in
+  let rep = { r = R.create opts.report ; stats = Hashtbl.create 32 ;
+              fuzzing = opts.fuzz <> None ; typed = [] } in
   let started = Unix.gettimeofday () in
   let body () =
     let pkg = Pkg.scan root in
@@ -805,6 +815,7 @@ let run opts root =
             | Ok ty ->
               bump rep "n_ep_linked" ;
               let gty = Mlsem.Types.GTy.mk ty in
+              add_typed rep r_name (Some c_name) gty ;
               Format.printf "%s: @[%a@]@.@." r_name Mlsem.Types.GTy.pp gty ;
               (Driver.bind ctx r_name gty, StrSet.add r_name known))
             natives (ctx, StrSet.empty)
@@ -815,7 +826,14 @@ let run opts root =
           process_r_file ?timeout:opts.timeout rep ~role:"package" ~defined ~native_syms ctx
             { f with prog = Link.rewrite_native_calls known f.prog })
           ctx files
-        |> ignore) ()
+        |> ignore ;
+        opts.fuzz |> Option.iter (fun fopts ->
+          Format.printf "@.@{<bold>===== Fuzzing =====@}@.@." ;
+          let t0 = Unix.gettimeofday () in
+          Fuzz.run fopts rep.r root (List.rev rep.typed) ;
+          emit rep "phase"
+            [ ("name", R.S "fuzz") ; ("elapsed_sec", R.F (Unix.gettimeofday () -. t0)) ;
+              ("count", R.I (List.length rep.typed)) ])) ()
       |> ignore
     end ;
     let stats =

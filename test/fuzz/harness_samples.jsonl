@@ -1,0 +1,13 @@
+{"id": 1, "kind": "r", "fun": "nchar", "symbol": null, "args": [{"name": null, "src": "c(\"ab\", \"cde\")"}]}
+{"id": 2, "kind": "r", "fun": "rep", "symbol": null, "args": [{"name": null, "src": "1L"}, {"name": "times", "src": "2"}]}
+{"id": 3, "kind": "r", "fun": "nchar", "symbol": null, "args": [{"name": null, "src": "new.env()"}]}
+{"id": 4, "kind": "r", "fun": "ifelse", "symbol": null, "args": [{"name": "test", "src": "TRUE"}, {"name": "yes", "src": "1"}, {"name": "no", "src": "2"}]}
+{"id": 5, "kind": "r", "fun": "sum", "symbol": null, "args": [{"name": null, "src": "\"a\""}]}
+{"id": 6, "kind": "r", "fun": "match.arg", "symbol": null, "args": [{"name": null, "src": "\"z\""}, {"name": null, "src": "c(\"a\", \"b\")"}]}
+{"id": 7, "kind": "r", "fun": "as.integer", "symbol": null, "args": [{"name": null, "src": "\"x\""}]}
+{"id": 8, "kind": "r", "fun": "unlink", "symbol": null, "args": [{"name": null, "src": "\"fuzz-no-such-file\""}]}
+{"id": 9, "kind": "r", "fun": "eval", "symbol": null, "args": [{"name": null, "src": "quote(repeat NULL)"}]}
+{"id": 10, "kind": "r", "fun": "nchar", "symbol": null, "args": [{"name": null, "src": "structure(as.raw(1), class = \"factor\")"}]}
+{"id": 11, "kind": "r", "fun": "quit", "symbol": null, "args": []}
+{"id": 12, "kind": "r", "fun": "print", "symbol": null, "args": [{"name": null, "src": "structure(list(a = 1), class = \"data.frame\")"}]}
+{"id": 13, "kind": "r", "fun": "invisible", "symbol": null, "args": [{"name": null, "src": "function(...) NULL"}]}

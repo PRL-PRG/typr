@@ -1,0 +1,240 @@
+int1
+  -1L
+  as.raw(c(0))
+  as.raw(c(0))
+  as.raw(c(0))
+^int1
+  as.raw(c(0))
+  FALSE
+  as.raw(c(255))
+  TRUE
+INT1 \ ^INT1
+  NA_integer_
+  NA_integer_
+  NA_integer_
+  NA_integer_
+int
+  as.raw(c(255))
+  2147483647L
+  as.raw(c(255, 255))
+  as.raw(c(0))
+INT & ~vec1
+  c(NA_integer_, NA_integer_)
+  integer(0)
+  c(0L, NA_integer_)
+  c(1L, 1L, -1L, -2147483647L, 1L)
+int1 & ~0L
+  FALSE
+  as.raw(c(0))
+  FALSE
+  NA_integer_
+42.
+  42
+  42
+  42
+  42
+^dbl1
+  42L
+  as.raw(c(0))
+  1000000L
+  as.raw(c(0))
+dbl1
+  -1L
+  NaN
+  as.raw(c(255))
+  1000000L
+dbl & ~dbl1
+  raw(0)
+  logical(0)
+  c(TRUE, NA)
+  c(FALSE, FALSE)
+"a" | "b"
+  "a"
+  "a"
+  "a"
+  "a"
+chr1 \ "a"
+  complex(real = 0, imaginary = 0)
+  as.raw(c(0))
+  0.5
+  2147483647L
+^chr1
+  2147483647L
+  complex(real = 1, imaginary = -2)
+  42
+  complex(real = 0, imaginary = 0)
+CHR & ~vec1
+  c(NA_character_, "x y")
+  character(0)
+  c("é", "a")
+  character(0)
+lgl1
+  as.raw(c(0))
+  FALSE
+  NA
+  TRUE
+tt
+  TRUE
+  TRUE
+  TRUE
+  TRUE
+^lgl1 | null
+  FALSE
+  as.raw(c(255))
+  TRUE
+  as.raw(c(0))
+clx1
+  0.5
+  1L
+  2L
+  as.raw(c(0))
+raw
+  as.raw(c(255, 255))
+  as.raw(c(255))
+  as.raw(c(0, 0))
+  raw(0)
+null
+  NULL
+  NULL
+  NULL
+  NULL
+int | null
+  c(-1L, 2147483647L)
+  1L
+  c(NA, NA)
+  42L
+~null
+  as.name("x")
+  as.name("x")
+  as.name("x")
+  function(...) as.name("x")
+any
+  list()
+  as.name("x")
+  NULL
+  list()
+vec
+  raw(0)
+  c(NA, FALSE)
+  c(NA, FALSE)
+  c(FALSE, TRUE, NA, TRUE, NA)
+vec1
+  FALSE
+  -2147483647L
+  0.5
+  NA_real_
+{ }
+  list()
+  list()
+  list()
+  list()
+{ a: int1, b: chr1? }
+  list("a" = TRUE, "b" = complex(real = 0, imaginary = 0))
+  list("a" = as.raw(c(255)), "b" = TRUE)
+  list("a" = NA, "b" = complex(real = 1, imaginary = -2))
+  list("a" = 1L)
+{ int1 }
+  list()
+  list(2147483647L)
+  list(as.raw(c(255)), as.raw(c(255)))
+  list()
+list
+  list()
+  list(quote(f(x)))
+  list()
+  list()
+{ a: { b: tt } }
+  list("a" = list("b" = TRUE))
+  list("a" = list("b" = TRUE))
+  list("a" = list("b" = TRUE))
+  list("a" = list("b" = TRUE))
+{ a: dbl1 }<foo>
+  structure(list("a" = as.raw(c(0))), class = "foo")
+  structure(list("a" = FALSE), class = "foo")
+  structure(list("a" = TRUE), class = "foo")
+  structure(list("a" = TRUE), class = "foo")
+INT<factor> with { levels: CHR }
+  structure(2L, "levels" = "", class = "factor")
+  structure(0L, "levels" = c("a", NA_character_), class = "factor")
+  structure(c(NA_integer_, -1L), "levels" = "é", class = "factor")
+  structure(2147483647L, "levels" = "é", class = "factor")
+<foo, bar>
+  structure(new("externalptr"), class = c("foo", "bar"))
+  structure(complex(0), class = c("foo", "bar"))
+  structure(character(0), class = c("foo", "bar"))
+  structure(list(), class = c("foo", "bar"))
+dbl with { names: chr }
+  structure(c(-2147483647, 2147483647), "names" = c("n1", "n2"))
+  structure(as.raw(c(0)), "names" = "n1")
+  structure(2, "names" = "n1")
+  structure(c(NA, FALSE, NA, NA, NA), "names" = c("n1", "n2", "n3", "n4", "n5"))
+int with { dim: INT }
+  structure(1000000L, "dim" = c(1L, 1L))
+  structure(c(1000000L, -1L, -2147483647L, -1L, -2147483647L), "dim" = c(5L, 1L))
+  structure(c(FALSE, FALSE, NA, FALSE, TRUE), "dim" = c(5L, 1L))
+  structure(as.raw(c(0)), "dim" = c(1L, 1L))
+env
+  new.env()
+  new.env()
+  new.env()
+  new.env()
+sym
+  as.name("x")
+  as.name("x")
+  as.name("x")
+  as.name("x")
+lang
+  quote(f(x))
+  quote(f(x))
+  quote(f(x))
+  quote(f(x))
+externalptr
+  new("externalptr")
+  new("externalptr")
+  new("externalptr")
+  new("externalptr")
+(x: dbl1) -> chr1
+  function(...) as.raw(c(255))
+  function(...) 42L
+  function(...) 0.5
+  function(...) complex(real = 1, imaginary = -2)
+(x: dbl1) -> empty
+  function(...) stop("fuzz: no value")
+  function(...) stop("fuzz: no value")
+  function(...) stop("fuzz: no value")
+  function(...) stop("fuzz: no value")
+v('a)
+  "a"
+  logical(0)
+  "NA"
+  c("é", "é", "x y", "NA", "x y")
+'a
+  -2147483647
+  NULL
+  "a"
+  NA_real_
+{ a: 'a, b: 'a }
+  list("a" = NULL, "b" = NULL)
+  list("a" = "NA", "b" = "é")
+  list("a" = list(), "b" = list(NULL))
+  list("a" = c(2147483647, -2.5), "b" = numeric(0))
+v1('a) | null
+  FALSE
+  "é"
+  NA
+  "é"
+empty
+  (none)
+  (none)
+  (none)
+  (none)
+dbl1 & chr1
+  -Inf
+  as.raw(c(255))
+  2
+  TRUE
+int1 & chr1 & ~^INT1
+  as.raw(c(255))
+  as.raw(c(0))
+  as.raw(c(0))
+  NA

@@ -1,0 +1,3 @@
+{"id": 1, "kind": "native", "fun": "C_cor", "symbol": "cor", "args": [{"name": null, "src": "stop(\"sample 1 must be skipped\")"}]}
+{"id": 2, "kind": "native", "fun": "C_cor", "symbol": "cor", "args": [{"name": null, "src": "matrix(c(1, 2, 3, 5), 2)"}, {"name": null, "src": "NULL"}, {"name": null, "src": "4L"}, {"name": null, "src": "FALSE"}]}
+{"id": 3, "kind": "native", "fun": "C_cor", "symbol": "cor", "args": [{"name": null, "src": "new.env()"}, {"name": null, "src": "NULL"}, {"name": null, "src": "4L"}, {"name": null, "src": "FALSE"}]}

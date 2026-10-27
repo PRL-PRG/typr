@@ -1,0 +1,81 @@
+3L : 3L<> with {  }
+  int1                       in
+  ^int1                      in
+  3L                         in
+  4L                         out
+  dbl1                       in
+  DBL1                       out
+  chr1                       in
+  int                        in
+  null                       out
+NA_integer_ : (INT1 \ ^INT1)<> with {  }
+  int1                       in
+  ^int1                      out
+  INT1                       in
+1:3 : (INT & ~vec1)<> with {  }
+  int                        in
+  INT                        in
+  int1                       out
+  dbl                        in
+  lgl                        out
+integer(0) : (INT & ~vec1)<> with {  }
+  int                        in
+  int1                       out
+  null                       out
+0.5 : (^DBL1 \ (..))<> with {  }
+  dbl1                       in
+  ^dbl1                      in
+  42.                        out
+  int1                       out
+42 : 42.<> with {  }
+  42.                        in
+  42L                        out
+  ^dbl1                      in
+"a" : "a"<> with {  }
+  "a"                        in
+  "b"                        out
+  chr1                       in
+  ^chr1                      in
+  dbl1                       out
+TRUE : tt<> with {  }
+  tt                         in
+  ff                         out
+  lgl1                       in
+  int1                       in
+NULL : null
+  null                       in
+  any                        in
+  int                        out
+factor("a") : 1L<factor> with { levels: "a"<> with {  } }
+  INT<factor>                in
+  INT<>                      out
+  int                        in
+  int1 with { levels: chr }  in
+c(a = 1, b = 2) : (DBL & ~vec1)<> with { names: (CHR & ~vec1)<> with {  } }
+  dbl with { names: chr }    in
+  dbl with { }               out
+  dbl                        in
+list(a = 1L) : { a: 1L<> with {  } }<> with { names: "a"<> with {  } }
+  { a: int1 }                in
+  { b: int1 }                out
+  { a: chr1 }                in
+  list                       in
+list(1L) : { 1L<> with {  } }<> with {  }  (inexact)
+  { int1 }                   in
+  { chr1 }                   in
+  { }                        unknown
+function(x) x : arrow<> with {  }  (inexact)
+  any                        in
+  (x: any) -> any            unknown
+  int                        out
+as.name("x") : sym
+  sym                        in
+  lang                       out
+  any                        in
+new.env() : env<> with {  }
+  env                        in
+  null                       out
+pairlist(a = 1) : lang<> with { names: "a"<> with {  } }
+  lang                       in
+  list                       out
+  null                       out
