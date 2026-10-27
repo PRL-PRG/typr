@@ -1,0 +1,7 @@
+Package: fuzzpkg
+Version: 0.1
+Title: A Package for Testing the Fuzzing of Inferred Types
+Description: R functions whose inferred types the fuzzing test checks; with
+    the wrong signature of strtoi in wrong_sig.R, one of them is unsound.
+License: MIT
+Encoding: UTF-8

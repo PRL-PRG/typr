@@ -30,7 +30,8 @@
 #               limits);
 #   "bad_args"  building the arguments failed (`message`): the sample is no
 #               R value, nothing was called.
-# and in every case but "bad_args": `forced`, for each argument whether it
+# and in every case but "bad_args": `exported`, whether the function is
+# exported (R definitions only); `forced`, for each argument whether it
 # was evaluated; `effects`, the side-effecting functions called (see
 # fuzz_effects below), in order, without repetition; `warnings`, the
 # messages of the first warnings; `elapsed`, in seconds.
@@ -177,7 +178,8 @@ fuzz_run <- function(s) {
   elapsed <- proc.time()[["elapsed"]] - start
 
   if (res$outcome == "value") res$value <- fuzz_describe(res$value)
-  c(res, list(forced = as.list(forced), effects = as.list(fuzz$effects),
+  exported <- if (identical(s$kind, "native")) NULL else s$fun %in% getNamespaceExports(ns)
+  c(res, list(exported = exported, forced = as.list(forced), effects = as.list(fuzz$effects),
               warnings = as.list(warnings), elapsed = round(elapsed, 3)))
 }
 

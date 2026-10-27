@@ -1,31 +1,31 @@
 {"id":1,"start":true}
-{"id":1,"outcome":"value","value":{"t":"vec","mode":"int","len":2},"forced":[true],"effects":[],"warnings":[]}
+{"id":1,"outcome":"value","value":{"t":"vec","mode":"int","len":2},"exported":true,"forced":[true],"effects":[],"warnings":[]}
 {"id":2,"start":true}
-{"id":2,"outcome":"value","value":{"t":"vec","mode":"int","len":2},"forced":[true,true],"effects":[],"warnings":[]}
+{"id":2,"outcome":"value","value":{"t":"vec","mode":"int","len":2},"exported":true,"forced":[true,true],"effects":[],"warnings":[]}
 {"id":3,"start":true}
-{"id":3,"outcome":"error","class":["simpleError","error","condition"],"message":"environments cannot be coerced to other types","fun":"nchar","ns":"base","primitive":false,"forced":[true],"effects":[],"warnings":[]}
+{"id":3,"outcome":"error","class":["simpleError","error","condition"],"message":"environments cannot be coerced to other types","fun":"nchar","ns":"base","primitive":false,"exported":true,"forced":[true],"effects":[],"warnings":[]}
 {"id":4,"start":true}
-{"id":4,"outcome":"value","value":{"t":"vec","mode":"dbl","len":1,"na":false,"x":1},"forced":[true,true,false],"effects":[],"warnings":[]}
+{"id":4,"outcome":"value","value":{"t":"vec","mode":"dbl","len":1,"na":false,"x":1},"exported":true,"forced":[true,true,false],"effects":[],"warnings":[]}
 {"id":5,"start":true}
-{"id":5,"outcome":"error","class":["simpleError","error","condition"],"message":"invalid 'type' (character) of argument","fun":"sum","ns":"base","primitive":true,"forced":[true],"effects":[],"warnings":[]}
+{"id":5,"outcome":"error","class":["simpleError","error","condition"],"message":"invalid 'type' (character) of argument","fun":"sum","ns":"base","primitive":true,"exported":true,"forced":[true],"effects":[],"warnings":[]}
 {"id":6,"start":true}
-{"id":6,"outcome":"error","class":["simpleError","error","condition"],"message":"'arg' should be one of “a”, “b”","fun":"match.arg","ns":"base","primitive":false,"forced":[true,true],"effects":[],"warnings":[]}
+{"id":6,"outcome":"error","class":["simpleError","error","condition"],"message":"'arg' should be one of “a”, “b”","fun":"match.arg","ns":"base","primitive":false,"exported":true,"forced":[true,true],"effects":[],"warnings":[]}
 {"id":7,"start":true}
-{"id":7,"outcome":"value","value":{"t":"vec","mode":"int","len":1,"na":true},"forced":[true],"effects":[],"warnings":["NAs introduced by coercion"]}
+{"id":7,"outcome":"value","value":{"t":"vec","mode":"int","len":1,"na":true},"exported":true,"forced":[true],"effects":[],"warnings":["NAs introduced by coercion"]}
 {"id":8,"start":true}
-{"id":8,"outcome":"value","value":{"t":"vec","mode":"int","len":1,"na":false,"x":0},"forced":[true],"effects":["unlink"],"warnings":[]}
+{"id":8,"outcome":"value","value":{"t":"vec","mode":"int","len":1,"na":false,"x":0},"exported":true,"forced":[true],"effects":["unlink"],"warnings":[]}
 {"id":9,"start":true}
-{"id":9,"outcome":"timeout","forced":[true,true],"effects":[],"warnings":[]}
+{"id":9,"outcome":"timeout","exported":true,"forced":[true],"effects":[],"warnings":[]}
 {"id":10,"start":true}
 {"id":10,"outcome":"bad_args","message":"adding class \"factor\" to an invalid object"}
 {"id":11,"start":true}
-{"id":11,"outcome":"error","class":["simpleError","error","condition"],"message":"fuzz: quitting is not allowed","forced":[],"effects":["quit"],"warnings":[]}
+{"id":11,"outcome":"error","class":["simpleError","error","condition"],"message":"fuzz: quitting is not allowed","exported":true,"forced":[],"effects":["quit"],"warnings":[]}
 {"id":12,"start":true}
-{"id":12,"outcome":"value","value":{"t":"list","elts":[{"t":"vec","mode":"dbl","len":1,"na":false,"x":1}],"names":["a"],"class":["data.frame"],"attrs":{"names":{"t":"vec","mode":"chr","len":1,"na":false,"x":"a"}}},"forced":[true],"effects":[],"warnings":[]}
+{"id":12,"outcome":"value","value":{"t":"list","elts":[{"t":"vec","mode":"dbl","len":1,"na":false,"x":1}],"names":["a"],"class":["data.frame"],"attrs":{"names":{"t":"vec","mode":"chr","len":1,"na":false,"x":"a"}}},"exported":true,"forced":[true],"effects":[],"warnings":[]}
 {"id":13,"start":true}
-{"id":13,"outcome":"value","value":{"t":"closure"},"forced":[true],"effects":[],"warnings":[]}
+{"id":13,"outcome":"value","value":{"t":"closure"},"exported":true,"forced":[true],"effects":[],"warnings":[]}
 {"id":1,"start":true}
 {"id":2,"start":true}
-{"id":2,"outcome":"value","value":{"t":"vec","mode":"dbl","len":4,"attrs":{"dim":{"t":"vec","mode":"int","len":2}}},"forced":[true,true,true,true],"effects":[],"warnings":[]}
+{"id":2,"outcome":"value","value":{"t":"vec","mode":"dbl","len":4,"attrs":{"dim":{"t":"vec","mode":"int","len":2}}},"exported":null,"forced":[true,true,true,true],"effects":[],"warnings":[]}
 {"id":3,"start":true}
-{"id":3,"outcome":"error","class":["simpleError","error","condition"],"message":"environments cannot be coerced to other types","fun":"C_cor","ns":"","primitive":false,"forced":[true,true,true,true],"effects":[],"warnings":[]}
+{"id":3,"outcome":"error","class":["simpleError","error","condition"],"message":"environments cannot be coerced to other types","fun":"C_cor","ns":"","primitive":false,"exported":null,"forced":[true,true,true,true],"effects":[],"warnings":[]}

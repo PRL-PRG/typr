@@ -1,0 +1,36 @@
+
+===== Native code =====
+
+
+===== R code =====
+
+
+===== prelude ../prelude/base.R =====
+
+===== prelude wrong_sig.R =====
+
+===== fuzzpkg/R/fuzzpkg.R =====
+parse_int: ((x: CHR) -> CHR)<> with {  }
+
+count_chars: (((x: vec) -> INT<>) & ((x: vec1) -> INT1<>))<> with {  }
+
+first_char: (((x: vec) -> CHR<>) & ((x: vec1) -> CHR1<>))<> with {  }
+
+checked: ∀'a. (((n: DBL | (DBL | INT) & v('a)) -> DBL | dbl & v('a)) & ((n: DBL1 |
+ INT1) -> dbl1) & ((n: ~(DBL | INT)) -> empty))<> with {  }
+
+first_of: ∀'a. ((x: 'a, y: any) -> 'a)<> with {  }
+
+
+===== Fuzzing =====
+
+parse_int: unsound 8, rejected 3, accepted 5
+  unsound: list(c(NA_character_, "NA", "", NA_character_, "é")) returned (INT & ~vec1)<> with {  }, expected CHR
+  accepted: list(list(c(NA_character_, "NA", "", NA_character_, "é"))) x wrap, returned (INT1 \ ^INT1)<> with {  }
+count_chars: ok 8, rejected 3, accepted 3
+  accepted: list(as.name("x")) x kind:sym, returned 1L<> with {  }
+first_char: ok 8, rejected 4, accepted 4
+  accepted: list("x" = list(logical(0))) x wrap, returned "l"<> with {  }
+checked: ok 7, rejected 8
+first_of: ok 8, rejected 3, accepted 3
+  accepted: list(NULL) x drop, returned null

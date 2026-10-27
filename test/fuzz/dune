@@ -109,3 +109,29 @@
      (run Rscript harness_check.R harness_base.jsonl)
      (run Rscript harness_check.R harness_native_results.jsonl)))
    (diff harness_check.expected harness_check.output))))
+
+; Fuzzing a package end to end: fuzzpkg, installed in a library of its own,
+; type-checked with the wrong signature of wrong_sig.R, of which fuzzing must
+; find the consequence: parse_int is unsound.
+(rule
+ (alias fuzz-r)
+ (deps
+  (glob_files %{project_root}/types/*.ty)
+  ../prelude/base.R
+  wrong_sig.R
+  (source_tree fuzzpkg)
+  %{project_root}/fuzz/describe.R
+  %{project_root}/fuzz/harness.R)
+ (action
+  (progn
+   (system
+    "rm -rf fuzzlib fuzzout && mkdir fuzzlib && R CMD INSTALL --no-test-load --library=fuzzlib fuzzpkg > install.log 2>&1")
+   (with-stdout-to
+    fuzzpkg.output
+    (setenv
+     R_LIBS
+     fuzzlib
+     (run %{exe:../../bin/main.exe} --prelude ../prelude/base.R --prelude wrong_sig.R
+      --fuzz-runner Rscript --fuzz-harness %{project_root}/fuzz --fuzz-dir fuzzout
+      fuzzpkg)))
+   (diff fuzzpkg.expected fuzzpkg.output))))

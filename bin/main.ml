@@ -2,6 +2,8 @@ let usage =
   "typr [--deps] [--gradual] [--debug] [--timeout SECONDS] [--prelude FILE]\n\
   \      [--report FILE] [--fallback-c-signature] [--lambda-rec SECONDS] [--log-times]\n\
   \      [--call-graph FILE]\n\
+  \      [--fuzz-runner CMD [--fuzz-harness DIR] [--fuzz-samples N] [--fuzz-seed N]\n\
+  \       [--fuzz-dir DIR] [--fuzz-call-timeout SECONDS]]\n\
   \      [-I DIR] <package-directory>"
 
 let deps_only = ref false
@@ -16,6 +18,15 @@ let log_times = ref false
 let lambda_rec = ref None
 let call_graph = ref None
 let root = ref None
+let fuzz_runner = ref None
+(* Next to the binary, as dune lays out its build directory: the image keeps
+   that layout. *)
+let fuzz_harness =
+  ref (Filename.concat (Filename.dirname (Filename.dirname Sys.executable_name)) "fuzz")
+let fuzz_samples = ref 8
+let fuzz_seed = ref 1
+let fuzz_dir = ref "fuzz-results"
+let fuzz_call_timeout = ref 5.
 
 let speclist =
   [ ("--deps", Arg.Set deps_only,
@@ -38,7 +49,18 @@ let speclist =
     ("--log-times", Arg.Set log_times,
      "Print NativeSem's per-function timing lines (the report has them regardless)") ;
     ("--call-graph", Arg.String (fun f -> call_graph := Some f),
-     "FILE  Write the native call graph in Graphviz format") ]
+     "FILE  Write the native call graph in Graphviz format") ;
+    ("--fuzz-runner", Arg.String (fun c -> fuzz_runner := Some c),
+     "CMD  Fuzz the inferred types: run the R harness with this command (e.g. Rscript, or a sandbox around it)") ;
+    ("--fuzz-harness", Arg.Set_string fuzz_harness,
+     "DIR  Directory of harness.R and describe.R (default: fuzz/ next to bin/)") ;
+    ("--fuzz-samples", Arg.Set_int fuzz_samples,
+     "N  Calls per function, inside its domain and outside each (default 8)") ;
+    ("--fuzz-seed", Arg.Set_int fuzz_seed, "N  Seed of the fuzzing (default 1)") ;
+    ("--fuzz-dir", Arg.Set_string fuzz_dir,
+     "DIR  Where the samples and results files go (default fuzz-results)") ;
+    ("--fuzz-call-timeout", Arg.Set_float fuzz_call_timeout,
+     "SECONDS  Time limit of one call when fuzzing (default 5)") ]
 
 let () =
   Printexc.record_backtrace true ;
@@ -50,7 +72,13 @@ let () =
   | None -> prerr_endline usage ; exit 1
   | Some root when not (Sys.file_exists root && Sys.is_directory root) ->
     Printf.eprintf "typr: not a package directory: %s\n" root ; exit 1
+  | Some _ when !gradual && !fuzz_runner <> None ->
+    prerr_endline "typr: --fuzz-runner cannot be used with --gradual (dyn has no values to draw)" ;
+    exit 2
   | Some root ->
+    let fuzz = !fuzz_runner |> Option.map (fun runner ->
+      { Typr.Fuzz.runner ; harness = !fuzz_harness ; samples = !fuzz_samples ;
+        seed = !fuzz_seed ; dir = !fuzz_dir ; call_timeout = !fuzz_call_timeout }) in
     let native =
       { Typr.Pipeline.default_native_options with
         debug = !debug ; fallback_c_signature = !fallback ; log_times = !log_times ;
@@ -59,4 +87,4 @@ let () =
     Typr.Pipeline.run
       { native ; prelude = !prelude ; include_dirs = !include_dirs ;
         timeout = !timeout ; gradual = !gradual ; deps_only = !deps_only ;
-        report = !report } root
+        report = !report ; fuzz } root
