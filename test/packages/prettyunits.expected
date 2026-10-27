@@ -36,19 +36,19 @@ name: format_num
 ===== packages/prettyunits/R/numbers.R =====
 format_num: Untypeable: untypeable projection
 Line 13, characters 4-9
-argument: null | 'I446
+argument: null | 'I474
 
 
 ===== packages/prettyunits/R/rounding.R =====
 pretty_round: Untypeable: untypeable encoding
 Line 29, characters 26-54
 application of base::as.character failed
-argument is of type @(v('I640))
+argument is of type @(v('I676))
 
 pretty_signif: Untypeable: untypeable encoding
 Line 93, characters 24-52
 application of base::as.character failed
-argument is of type @(v('I878))
+argument is of type @(v('I920))
 
 
 ===== packages/prettyunits/R/p-value.R =====
@@ -73,7 +73,7 @@ name: format_bytes
 ===== packages/prettyunits/R/sizes.R =====
 format_bytes: Untypeable: untypeable projection
 Line 13, characters 4-9
-argument: null | 'I1148
+argument: null | 'I1203
 
 
 ===== packages/prettyunits/R/xtime-ago.R =====
