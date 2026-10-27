@@ -23,6 +23,12 @@
     the harness failed on the sample) and [not_run] (the runner stopped
     before reaching it).
 
+    Up to [samples] calls are drawn inside the domain, and as many outside.
+    Calls inside go round the arrows of the type, for each overload to be
+    tried: a function with more arrows than [samples] gets one call per
+    arrow, up to [4 * samples]. The result each call must have is that of
+    all the arrows whose domain it is in ({!Gen.gen_call}).
+
     Calls are drawn from a random state seeded with the seed, the package
     and the name of the function: the samples of a function stay the same
     from a run to the next, whatever else changed in the package. *)
@@ -57,7 +63,9 @@ let fuzzable t =
 
 type side = In of Ty.t (* the expected result type *) | Out of Mutate.mutant
 
-type sample = { id : int ; target : target ; call : Gen.call ; side : side }
+(* [arrow]: the overload of the target (in {!Gen.arrows}) the call was drawn
+   from, when it has several. *)
+type sample = { id : int ; target : target ; call : Gen.call ; side : side ; arrow : int option }
 
 let rec take n = function [] -> [] | _ when n <= 0 -> [] | x :: l -> x :: take (n - 1) l
 
@@ -66,23 +74,30 @@ let dedup key l =
   List.filter (fun x -> let k = key x in
     if Hashtbl.mem seen k then false else (Hashtbl.add seen k () ; true)) l
 
-(* The calls for [t], inside then outside its domain. *)
+(* The calls for [t], inside then outside its domain, with the arrow each
+   call inside was drawn from. Inside, the calls go round the arrows, so
+   that each gets one before any gets two: there are as many as the arrows
+   when there are more than [samples], up to [4 * samples]. *)
 let draw opts pkg t =
   let st = Random.State.make [| opts.seed ; Hashtbl.hash pkg ; Hashtbl.hash t.name |] in
   let positional = t.symbol <> None in
+  let k = List.length (Gen.arrows t.ty) in
+  let n_in = if k <= 1 then opts.samples else min (max opts.samples k) (4 * opts.samples) in
   let ins =
-    List.init opts.samples (fun _ -> Gen.gen_call ~positional st t.ty)
+    List.init n_in (fun i ->
+      let arrow = if k <= 1 then None else Some (i mod k) in
+      Gen.gen_call ~positional ?arrow st t.ty |> Option.map (fun s -> s, arrow))
     |> List.filter_map Fun.id
-    |> dedup (fun (s : Gen.sample) -> Gen.call_to_r s.call) in
+    |> dedup (fun ((s : Gen.sample), _) -> Gen.call_to_r s.call) in
   let outs = match ins with
     | [] -> []
     | _ ->
       let per = (opts.samples + List.length ins - 1) / List.length ins in
-      ins |> List.concat_map (fun (s : Gen.sample) -> Mutate.mutants ~n:per st t.ty s.call)
+      ins |> List.concat_map (fun ((s : Gen.sample), _) -> Mutate.mutants ~n:per st t.ty s.call)
       |> dedup (fun (m : Mutate.mutant) -> Gen.call_to_r m.call)
       |> take opts.samples in
-  List.map (fun (s : Gen.sample) -> s.call, In s.expected) ins
-  @ List.map (fun (m : Mutate.mutant) -> m.call, Out m) outs
+  List.map (fun ((s : Gen.sample), arrow) -> s.call, In s.expected, arrow) ins
+  @ List.map (fun (m : Mutate.mutant) -> m.call, Out m, None) outs
 
 let sample_json s : Yojson.Safe.t =
   let arg name v = `Assoc [ "name", name ; "src", `String (Rval.to_r v) ] in
@@ -203,6 +218,7 @@ let report_sample rep s j =
       ("kind", R.S (if s.target.symbol = None then "r" else "native")) ;
       ("id", R.I s.id) ;
       ("dir", R.S (match s.side with In _ -> "in" | Out _ -> "out")) ;
+      ("arrow", (match s.arrow with Some i -> R.I i | None -> R.N)) ;
       ("verdict", R.S j.verdict) ;
       ("args", R.S (Gen.call_to_r s.call)) ;
       ("param", param) ; ("op", op) ;
@@ -236,20 +252,28 @@ let report_def rep t judged =
                 |> List.sort_uniq String.compare in
   let exported = judged |> List.find_map (fun (_, j) ->
     match field "exported" j.r with `Bool b -> Some b | _ -> None) in
+  (* The arrows at least one call was drawn from. *)
+  let n_arrows = List.length (Gen.arrows t.ty) in
+  let covered =
+    if n_arrows <= 1 then (if n_in > 0 then n_arrows else 0)
+    else judged |> List.filter_map (fun (s, _) -> s.arrow) |> List.sort_uniq compare |> List.length in
   R.emit rep "fuzz_def"
     ([ ("def", R.S t.name) ;
        ("kind", R.S (if t.symbol = None then "r" else "native")) ;
        ("type", R.S (pp_ty t.ty)) ;
        ("n_in", R.I n_in) ; ("n_out", R.I (List.length judged - n_in)) ;
        ("ungeneratable", R.B (n_in = 0)) ; ("lb_ne_ub", R.B (lb_ne_ub t)) ;
+       ("n_arrows", R.I n_arrows) ; ("n_arrows_covered", R.I covered) ;
        ("exported", (match exported with Some b -> R.B b | None -> R.N)) ;
        ("effects", R.L effects) ]
      @ List.map (fun v -> ("n_" ^ v, R.I (count v))) verdicts) ;
   let counts = verdicts |> List.filter_map (fun v ->
     match count v with 0 -> None | n -> Some (Printf.sprintf "%s %d" v n)) in
-  Format.printf "%s: %s%s@." t.name
+  Format.printf "%s: %s%s%s@." t.name
     (if n_in = 0 then "no call inside the domain; " else "")
-    (String.concat ", " counts) ;
+    (String.concat ", " counts)
+    (if n_in > 0 && covered < n_arrows
+     then Printf.sprintf " (calls for %d of the %d arrows)" covered n_arrows else "") ;
   List.iter (fun v -> Option.iter print_example (example judged v)) [ "unsound" ; "accepted" ] ;
   if effects <> [] then Format.printf "  effects: %s@." (String.concat ", " effects)
 
@@ -277,7 +301,8 @@ let run opts rep root targets =
       try draw opts pkg t
       with e ->
         Format.printf "fuzz: no calls for %s (%s)@." t.name (Printexc.to_string e) ; [] in
-    calls |> List.map (fun (call, side) -> incr next ; { id = !next ; target = t ; call ; side })) in
+    calls |> List.map (fun (call, side, arrow) ->
+      incr next ; { id = !next ; target = t ; call ; side ; arrow })) in
   if not (Sys.file_exists opts.dir) then Sys.mkdir opts.dir 0o755 ;
   let path ext = Filename.concat opts.dir (pkg ^ ext) in
   let samples_file = path ".samples.jsonl" and results_file = path ".results.jsonl"

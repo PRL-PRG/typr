@@ -86,3 +86,25 @@
     -> null
   list(new("externalptr"), function(...) stop("fuzz: no value"))
     -> null
+((x: int1) -> int1) & ((x: chr1) -> chr1)  (per arrow)
+  arrow 0: list(as.raw(c(0)))
+    -> int1
+  arrow 0: list(-2147483647L)
+    -> int1
+  arrow 1: list(1)
+    -> vec1
+  arrow 1: list("x" = as.raw(c(255)))
+    -> int1
+((x: 'a & null) -> null) & ((x: v('p)) -> v('p)) & ((x: { a: dbl }) -> dbl)  (per arrow)
+  arrow 0: list("x" = NULL)
+    -> null
+  arrow 0: list("x" = NULL)
+    -> null
+  arrow 1: list("x" = 2147483647L)
+    -> INT
+  arrow 1: list(integer(0))
+    -> INT
+  arrow 2: list("x" = list("a" = raw(0)))
+    -> dbl
+  arrow 2: list("x" = list("a" = c(-1L, 1L)))
+    -> dbl

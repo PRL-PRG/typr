@@ -60,15 +60,17 @@ let stands_for_value ty v =
   not (Ty.equiv (sub r_values) (sub Ty.empty))
 
 (* A substitution of every variable of [ty], each drawn from the pool that
-   fits its occurrences. Each instance is drawn among those after which
-   [ty] still satisfies [ok], if any: a variable in [x: 'a & null] can only
-   be [null]. *)
+   fits its occurrences. Each instance is drawn among those for which the
+   substitution so far satisfies [ok], if any: a variable in [x: 'a & null]
+   can only be [null]. *)
 let instantiate ?(ok = fun _ -> true) st ty =
   let ty, s1 =
     instance_vars ty |> VarSet.elements |> List.fold_left (fun (ty, s) v ->
       let sub inst = Subst.apply (Subst.singleton1 v inst) ty in
       let pool = if stands_for_value ty v then value_pool else prim_pool in
-      let pool = match List.filter (fun i -> ok (sub i)) pool with [] -> pool | p -> p in
+      let pool =
+        match List.filter (fun i -> ok (Subst.of_list (List.rev ((v, i) :: s)) [])) pool with
+        | [] -> pool | p -> p in
       let inst = Option.get (pick st pool) in
       sub inst, (v, inst) :: s) (ty, [])
   in
@@ -299,14 +301,15 @@ let retry_instances ?ok st ty f =
     if n = 0 then None
     else
       let ty', s = instantiate ?ok st ty in
-      match f ty' with
+      match f ty' s with
       | Some x -> Some (s, x)
       | None -> if VarSet.is_empty (Ty.vars ty) then None else loop (n - 1)
   in
   loop inst_tries
 
 let sample_poly ?depth st ty =
-  retry_instances ~ok:(fun t -> not (Ty.is_empty t)) st ty (sample ?depth st)
+  retry_instances ~ok:(fun s -> not (Ty.is_empty (Subst.apply s ty))) st ty
+    (fun ty _ -> sample ?depth st ty)
 
 (* ===== Argument lists ===== *)
 
@@ -381,12 +384,26 @@ type sample = {
   expected : Ty.t ;           (* the result type for these arguments *)
 }
 
-let gen_call ?(positional = false) st fty =
-  let content = if Ty.leq fty Attr.any then Attr.proj_content fty else fty in
-  let attempt content =
+let content fty = if Ty.leq fty Attr.any then Attr.proj_content fty else fty
+
+(* The arrows of a function type: the domains and results of its overloads
+   (of all the lines of its DNF), in order. *)
+let arrows fty = Mlsem.Types.Arrow.dnf (content fty) |> List.concat
+
+(* With [arrow], the arguments come from the domain of that arrow (of
+   [arrows fty]), and the variables are instantiated so that it is not
+   empty; otherwise, from the domain of any. *)
+let gen_call ?(positional = false) ?arrow st fty =
+  let content = content fty in
+  let target = match arrow with
+    | None -> Mlsem.Types.Arrow.domain content
+    | Some i -> fst (List.nth (arrows content) i) in
+  let attempt content s =
     let dom = Mlsem.Types.Arrow.domain content in
-    let atoms = Mlsem.Types.Arrow.dnf content |> List.concat
-                |> List.concat_map (fun (d, _) -> try Arg.destruct d with Invalid_argument _ -> []) in
+    let doms = match arrow with
+      | None -> Mlsem.Types.Arrow.dnf content |> List.concat |> List.map fst
+      | Some _ -> [ Subst.apply s target ] in
+    let atoms = doms |> List.concat_map (fun d -> try Arg.destruct d with Invalid_argument _ -> []) in
     let rec loop n =
       if n = 0 then None
       else match pick st atoms with
@@ -404,6 +421,6 @@ let gen_call ?(positional = false) st fty =
     in
     loop tries
   in
-  let ok t = not (Ty.is_empty (Mlsem.Types.Arrow.domain t)) in
+  let ok s = not (Ty.is_empty (Subst.apply s target)) in
   retry_instances ~ok st content attempt
   |> Option.map (fun (subst, (call, expected)) -> { subst ; call ; expected })
