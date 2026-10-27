@@ -84,6 +84,12 @@ let with_outcome_hook handler f =
   R_c_typing.Runner.on_outcome := handler ;
   Fun.protect ~finally:(fun () -> R_c_typing.Runner.on_outcome := saved) f
 
+(* Rsem does the same through [Driver.on_outcome]. *)
+let with_r_outcome_hook handler f =
+  let saved = !Driver.on_outcome in
+  Driver.on_outcome := handler ;
+  Fun.protect ~finally:(fun () -> Driver.on_outcome := saved) f
+
 (* ===== Ordering ===== *)
 
 (* Topological order of [nodes] w.r.t. [deps] (the nodes a node must follow).
@@ -280,11 +286,10 @@ let order_defs items =
    not take the rest of the package down with it.
 
    Every definition yields one [r_def] record. Its status comes from what Rsem
-   *did* -- the guard says whether it ran out of time, [Driver.find] whether
-   the name ended up typed -- and only an error's title, position and
-   description come from the block Rsem printed, which [Report.capture] scopes
-   to this one definition. [role] tells the prelude from the package;
-   [defined] and [native_syms] classify an unbound name. *)
+   *did* -- the guard says whether it ran out of time, [Driver.on_outcome]
+   whether the definition was untypeable, with the checker's error, and
+   [Driver.find] whether its name ended up typed. [role] tells the prelude
+   from the package; [defined] and [native_syms] classify an unbound name. *)
 let process_r_file ?timeout rep ~role ~defined ~native_syms ctx f =
   let module R = Report in
   let warn what name exn =
@@ -321,16 +326,27 @@ let process_r_file ?timeout rep ~role ~defined ~native_syms ctx f =
       | None -> false
     in
     let started = Unix.gettimeofday () in
-    (* [capture] sits outside the guard, so that the guard's own report of a
-       timeout lands in this definition's block. On timeout the definition
-       keeps no type, so the ones that use it report an unbound variable; the
-       rest of the package is still checked. *)
-    let (outcome, block) =
-      R.capture (fun () ->
+    (* What became of each variable the definition typed: itself, and the
+       names it hoists out of its body. On timeout the definition keeps no
+       type, so the ones that use it report an unbound variable; the rest of
+       the package is still checked. *)
+    let outcomes = ref [] in
+    let outcome =
+      with_r_outcome_hook (fun v o -> outcomes := (v, o) :: !outcomes) (fun () ->
         match Timeout.guard' timeout ~name ~unchanged:ctx (fun () -> Driver.treat_def ctx past) with
         | (ctx', false) -> `Done ctx'
         | (ctx', true) -> `Timeout ctx'
         | exception e -> warn "definition" name e ; `Skipped e)
+    in
+    (* The definition's own outcome: a hoisted name is never the one it
+       defines, and an anonymous statement is Rsem's [_]. *)
+    let own_error =
+      List.rev !outcomes |> List.find_map (fun (v, o) ->
+        match o with
+        | Driver.Untypeable (err, pos)
+          when Mlsem.Common.Variable.get_name v = Some printed ->
+          Some (R.untypeable_of_error err pos)
+        | _ -> None)
     in
     let elapsed = Unix.gettimeofday () -. started in
     let typed_as n ctx' =
@@ -347,7 +363,7 @@ let process_r_file ?timeout rep ~role ~defined ~native_syms ctx f =
       | `Timeout ctx' -> ctx', "timeout", None, None, None
       | `Skipped e -> ctx, "skipped", None, None, Some (Printexc.to_string e)
       | `Done ctx' ->
-        (match R.untypeable_of_block ~name:printed block with
+        (match own_error with
          | Some u -> ctx', "untypeable", None, Some u, None
          | None ->
            (match def.name with

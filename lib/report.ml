@@ -68,77 +68,31 @@ let degenerate ty =
   && Arrow.dnf content
      |> List.for_all (List.for_all (fun (_dom, codom) -> Ty.is_empty codom))
 
-(* ===== Output capture ===== *)
+(* ===== The R side's errors ===== *)
 
-(* [capture f] runs [f] with everything it prints on the standard formatter
-   collected, re-emits that output verbatim, and returns it with the result.
-
-   Rsem reports a definition's outcome only by printing it -- the structured
-   error is thrown away -- so this is how the R side gets a per-definition text
-   to parse. It is scoped, not stream, scraping: one [Driver.treat_def] call is
-   exactly one printed block, which is the delimitation the old dashboard's
-   line scanner never had. Exceptions propagate, the output already re-emitted.
-
-   Every out-function is redirected, not just [out_string]: the stock
-   [out_newline] and [out_spaces] of a formatter write to the underlying
-   channel directly and would bypass the buffer. *)
-let capture f =
-  let fmt = Format.std_formatter in
-  Format.pp_print_flush fmt () ;
-  let saved = Format.pp_get_formatter_out_functions fmt () in
-  let buf = Buffer.create 1024 in
-  Format.pp_set_formatter_out_functions fmt
-    { out_string = Buffer.add_substring buf ;
-      out_flush = (fun () -> ()) ;
-      out_newline = (fun () -> Buffer.add_char buf '\n') ;
-      out_spaces = (fun n -> Buffer.add_string buf (String.make n ' ')) ;
-      out_indent = (fun n -> Buffer.add_string buf (String.make n ' ')) } ;
-  let restore () =
-    Format.pp_print_flush fmt () ;
-    Format.pp_set_formatter_out_functions fmt saved ;
-    saved.out_string (Buffer.contents buf) 0 (Buffer.length buf) ;
-    saved.out_flush ()
-  in
-  match f () with
-  | result -> restore () ; (result, Buffer.contents buf)
-  | exception e -> restore () ; raise e
-
-(* ===== The R side's printed block ===== *)
-
-(* What Rsem prints for a definition it could not type:
-     name: Untypeable: <title>
-     [Line N, characters A-B  |  File "f", line N, characters A-B]
-     [descr, possibly several lines]
-   The header is deliberately matched with the name, because a success line
-   ([name: <type>]) and a hoisted-name failure ([name: msg], driver.ml:185)
-   have the same shape and neither is an "Untypeable:" line. *)
+(* A definition Rsem could not type, from the error its [Driver.on_outcome]
+   hook passes: the title, the position as (line, first and last character),
+   when it has one, and the description. *)
 type untypeable = { title : string ; loc : (int * int * int) option ; descr : string option }
 
-let untypeable_of_block ~name block =
-  let lines =
-    String.split_on_char '\n' block |> List.map String.trim
-    |> List.filter (fun l -> l <> "") in
-  let prefix = name ^ ": Untypeable: " in
-  let scan_loc l =
-    try Some (Scanf.sscanf l "Line %d, characters %d-%d" (fun a b c -> (a, b, c)))
-    with _ ->
-      try Some (Scanf.sscanf l "File %S, line %d, characters %d-%d" (fun _ a b c -> (a, b, c)))
-      with _ -> None
+(* The description is normalized as it reads once printed: lines trimmed,
+   blank ones dropped. *)
+let untypeable_of_error (err : Mlsem.System.Checker.error) pos =
+  let open Mlsem.Common in
+  let loc =
+    if pos = Position.dummy then None
+    else
+      let start = Position.start_of_position pos in
+      let c1, c2 = Position.characters start (Position.end_of_position pos) in
+      Some (Position.line start, c1, c2)
   in
-  let rec find = function
-    | [] -> None
-    | l :: rest when String.starts_with ~prefix l ->
-      let title = String.sub l (String.length prefix) (String.length l - String.length prefix) in
-      let loc, rest =
-        match rest with
-        | l :: rest' -> (match scan_loc l with Some loc -> (Some loc, rest') | None -> (None, rest))
-        | [] -> (None, [])
-      in
-      let descr = match rest with [] -> None | ls -> Some (String.concat "\n" ls) in
-      Some { title ; loc ; descr }
-    | _ :: rest -> find rest
+  let descr =
+    Option.bind err.descr (fun d ->
+      match String.split_on_char '\n' d |> List.map String.trim |> List.filter (( <> ) "") with
+      | [] -> None
+      | ls -> Some (String.concat "\n" ls))
   in
-  find lines
+  { title = err.title ; loc ; descr }
 
 (* The name an [unbound variable] error is about: its descr is [name: <id>]. *)
 let unbound_name (u : untypeable) =
