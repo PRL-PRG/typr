@@ -27,10 +27,10 @@ first_of: ∀'a. ((x: 'a, y: any) -> 'a)<> with {  }
 parse_int: unsound 8, rejected 3, accepted 5
   unsound: list(c(NA_character_, "NA", "", NA_character_, "é")) returned (INT & ~vec1)<> with {  }, expected CHR
   accepted: list(list(c(NA_character_, "NA", "", NA_character_, "é"))) x wrap, returned (INT1 \ ^INT1)<> with {  }
-count_chars: ok 8, rejected 3, accepted 4
-  accepted: list(list(NA_complex_)) x wrap, returned 2L<> with {  }
-first_char: ok 7, rejected 4, accepted 4
-  accepted: list("x" = list(logical(0))) x wrap, returned "l"<> with {  }
+count_chars: ok 8, rejected 3, accepted 2
+  accepted: list(list(c(FALSE, FALSE, NA, NA, TRUE))) x wrap, returned 29L<> with {  }
+first_char: ok 8, rejected 3, accepted 1
+  accepted: list("x" = list()) x kind:list, returned (CHR & ~vec1)<> with {  }
 checked: ok 8, rejected 5
 first_of: ok 8, rejected 3, accepted 3
   accepted: list(NULL) x drop, returned null

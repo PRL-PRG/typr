@@ -102,9 +102,12 @@
     -> null
   arrow 1: list("x" = 2147483647L)
     -> INT
-  arrow 1: list(integer(0))
-    -> INT
+  arrow 1: list(character(0))
+    -> CHR
   arrow 2: list("x" = list("a" = raw(0)))
     -> dbl
   arrow 2: list("x" = list("a" = c(-1L, 1L)))
     -> dbl
+((x: int1) -> int1) & ((x: chr1) -> chr1) & ((x: null) -> null): same calls
+(a: { b: tt, c: dbl? } | { d: chr }, f: 'f, ...: 'g) -> 'f: same calls
+(x: (INT<factor> with { levels: CHR }) | DBL1 | lgl, y: v('p) | null) -> v('p): same calls

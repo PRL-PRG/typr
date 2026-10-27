@@ -24,6 +24,53 @@ let pick st = function
 
 let coin st = Random.State.bool st
 
+(* ===== Canonical order ===== *)
+
+(* The lists that come from taking a type apart (its variables, the lines of
+   its DNF, ...) are ordered by the internal ids of their components, which
+   depend on everything the process did before: on what was type-checked
+   before, and on which definitions timed out. Drawing from them as they
+   come, the values drawn for a type would change from a run to the next.
+   They are sorted first, by printed form, which is canonical. *)
+let canonical key l =
+  List.map (fun x -> key x, x) l
+  |> List.stable_sort (fun (a, _) (b, _) -> String.compare a b) |> List.map snd
+
+let show ty = Format.asprintf "%a" Mlsem.Types.Ty.pp ty
+
+(* Variables by name: the variables of the inferred types are named after
+   the parameters they stand for. *)
+let vars ty = VarSet.elements ty |> canonical (Format.asprintf "%a" Var.pp)
+let row_vars ty = RowVarSet.elements ty |> canonical (Format.asprintf "%a" RowVar.pp)
+
+(* The lines of a DNF, whose positive and negative atoms build [mk]. *)
+let lines mk ls =
+  let line (ps, ns) = Ty.diff (Ty.conj (List.map mk ps)) (Ty.disj (List.map mk ns)) in
+  canonical (fun l -> show (line l)) ls
+
+(* The DNF of a function type: its lines, each the arrows of an
+   intersection. *)
+let dnf ty =
+  let arrow (d, c) = show d ^ " -> " ^ show c in
+  Mlsem.Types.Arrow.dnf ty
+  |> List.map (canonical arrow)
+  |> canonical (fun line -> String.concat " & " (List.map arrow line))
+
+(* Argument lists by their parameters. A definition-site one is not built
+   back into a type: each would get a signature of its own. *)
+let arg_key (a : (string, Ty.F.t) Arg.elt) =
+  let f fld =
+    let a = Ty.F.get_descr fld |> Ty.O.get in
+    show (Ty.O.Atom.get a) ^ (if Ty.O.Atom.is_optional a then "?" else "") in
+  let named l = List.map (fun (n, fld) -> n ^ ": " ^ f fld) l |> String.concat ", " in
+  match a with
+  | Arg.DefSite a ->
+    Printf.sprintf "def(%s; ...%s; %s; ...%s)" (named a.pos_named) (f a.pos_tl)
+      (named a.named) (f a.named_tl)
+  | Arg.CallSite a ->
+    Printf.sprintf "call(%s; ...%s; %s; ...%s)" (String.concat ", " (List.map f a.pos'))
+      (f a.pos_tl') (named a.named') (f a.named_tl')
+
 (* ===== Type variables ===== *)
 
 let mode_pool = [ Prim.Int.any ; Prim.Dbl.any ; Prim.Chr.any ; Prim.Lgl.any ]
@@ -65,7 +112,7 @@ let stands_for_value ty v =
    can only be [null]. *)
 let instantiate ?(ok = fun _ -> true) st ty =
   let ty, s1 =
-    instance_vars ty |> VarSet.elements |> List.fold_left (fun (ty, s) v ->
+    instance_vars ty |> vars |> List.fold_left (fun (ty, s) v ->
       let sub inst = Subst.apply (Subst.singleton1 v inst) ty in
       let pool = if stands_for_value ty v then value_pool else prim_pool in
       let pool =
@@ -75,7 +122,7 @@ let instantiate ?(ok = fun _ -> true) st ty =
       sub inst, (v, inst) :: s) (ty, [])
   in
   let ty, s2 =
-    Ty.row_vars ty |> RowVarSet.elements |> List.fold_left (fun (ty, s) v ->
+    Ty.row_vars ty |> row_vars |> List.fold_left (fun (ty, s) v ->
       let inst = Option.get (pick st row_pool) in
       Subst.apply (Subst.singleton2 v inst) ty, (v, inst) :: s) (ty, [])
   in
@@ -121,9 +168,10 @@ let int_bounds (lines : U.interval U.atomic_t) =
     l.prim |> List.concat_map (fun (lo, hi) ->
       let around = function None -> [] | Some b -> [b - 1 ; b ; b + 1] in
       around lo @ around hi))
+  |> List.sort_uniq Int.compare
 
 let strings (lines : string U.atomic_t) =
-  lines |> List.concat_map (fun (l : _ U.atomic_line) -> l.prim)
+  lines |> List.concat_map (fun (l : _ U.atomic_line) -> l.prim) |> List.sort_uniq String.compare
 
 let safe f x = try f x with Invalid_argument _ | Not_found -> []
 
@@ -161,6 +209,7 @@ let modes = Rval.[ Lgl, Prim.Lgl.any ; Int, Prim.Int.any ; Dbl, Prim.Dbl.any ;
 
 let gen_vec st c =
   let lines = try Vec.destruct (Ty.cap c Vec.any) with Invalid_argument _ -> [] in
+  let lines = canonical (fun l -> show (Vec.mk_line l)) lines in
   Option.bind (pick st lines) (fun (atom, _negs) ->
     let p, len = match atom with
       | Vec.Scalar p -> p, 1
@@ -191,7 +240,7 @@ let rec gen st depth ty : Rval.t option =
   | Some `Sym -> Some (Rval.Sym "x")
   | Some `Attr ->
     let lines = try Attr.destruct (Ty.cap ty Attr.any) with Invalid_argument _ -> [] in
-    Option.bind (pick st lines) (fun (ps, _negs) ->
+    Option.bind (pick st (canonical (fun l -> show (Attr.mk_line l)) lines)) (fun (ps, _negs) ->
       let conj get = List.fold_left (fun t a -> Ty.cap t (get a)) Ty.any ps in
       let content = conj (fun (a : _ Attr.atom) -> a.content) in
       let classes = conj (fun (a : _ Attr.atom) -> a.classes) in
@@ -216,7 +265,7 @@ and gen_content st depth c =
     | `Fun, _ ->
       (* A constant function, typed at all the domains of an intersection of
          arrows, returning a value of all their codomains. *)
-      let lines = Mlsem.Types.Arrow.dnf (Ty.cap c arrows_any) in
+      let lines = dnf (Ty.cap c arrows_any) in
       Option.bind (pick st lines) (fun arrows ->
         let doms = List.map fst arrows in
         let codom = List.map snd arrows |> Ty.conj in
@@ -226,8 +275,8 @@ and gen_content st depth c =
              |> Option.map (fun ret -> Rval.Fun { doms ; ret = Some ret })))
 
 and gen_list st depth c =
-  let lines = try Lst.destruct (Ty.cap c Lst.any) with Invalid_argument _ -> [] in
-  Option.bind (pick st lines) (fun (ps, _negs) ->
+  let ls = try Lst.destruct (Ty.cap c Lst.any) with Invalid_argument _ -> [] in
+  Option.bind (pick st (lines Lst.mk ls)) (fun (ps, _negs) ->
     let fields, tl = lst_fields ps in
     let exception Fail in
     try
@@ -250,7 +299,8 @@ and gen_classes st classes =
   | exception Invalid_argument _ -> None
   | { pos ; unk ; _ } ->
     let names = List.map (fun (Classes.L (n, _)) -> n) in
-    let maybe = names unk |> List.filter (fun _ -> coin st) in
+    (* The order of [pos] is the order of the classes, which matters. *)
+    let maybe = names unk |> List.sort String.compare |> List.filter (fun _ -> coin st) in
     match names pos @ maybe with
     | [] -> None
     | cls -> Some cls
@@ -259,8 +309,8 @@ and gen_classes st classes =
    length of the value, so they are built from it rather than from their
    type, which the validation checks anyway. *)
 and gen_attrs st depth v attrs =
-  let lines = try Lst.destruct (Ty.cap attrs Lst.any) with Invalid_argument _ -> [] in
-  match pick st lines with
+  let ls = try Lst.destruct (Ty.cap attrs Lst.any) with Invalid_argument _ -> [] in
+  match pick st (lines Lst.mk ls) with
   | None -> []
   | Some (ps, _) ->
     let fields, _ = lst_fields ps in
@@ -388,7 +438,7 @@ let content fty = if Ty.leq fty Attr.any then Attr.proj_content fty else fty
 
 (* The arrows of a function type: the domains and results of its overloads
    (of all the lines of its DNF), in order. *)
-let arrows fty = Mlsem.Types.Arrow.dnf (content fty) |> List.concat
+let arrows fty = dnf (content fty) |> List.concat
 
 (* With [arrow], the arguments come from the domain of that arrow (of
    [arrows fty]), and the variables are instantiated so that it is not
@@ -401,9 +451,10 @@ let gen_call ?(positional = false) ?arrow st fty =
   let attempt content s =
     let dom = Mlsem.Types.Arrow.domain content in
     let doms = match arrow with
-      | None -> Mlsem.Types.Arrow.dnf content |> List.concat |> List.map fst
+      | None -> dnf content |> List.concat |> List.map fst
       | Some _ -> [ Subst.apply s target ] in
-    let atoms = doms |> List.concat_map (fun d -> try Arg.destruct d with Invalid_argument _ -> []) in
+    let atoms = doms |> List.concat_map (fun d -> try Arg.destruct d with Invalid_argument _ -> [])
+                |> canonical arg_key in
     let rec loop n =
       if n = 0 then None
       else match pick st atoms with

@@ -58,6 +58,32 @@ let run_per_arrow () =
             (if ok then "" else "  NOT IN ITS ARROW") (Typr.Report.one_line Ty.pp expected)
       done))
 
+(* The calls drawn for a type must not depend on the internal ids of its
+   components, that is on what was built before it: parsing the signatures
+   in the opposite order gives their components other ids, but the same
+   calls. *)
+let canonical = [
+  "((x: int1) -> int1) & ((x: chr1) -> chr1) & ((x: null) -> null)";
+  "(a: { b: tt, c: dbl? } | { d: chr }, f: 'f, ...: 'g) -> 'f";
+  "(x: (INT<factor> with { levels: CHR }) | DBL1 | lgl, y: v('p) | null) -> v('p)";
+]
+
+let draws sigs =
+  List.map (fun s ->
+    let fty = Lang.Defs.ty s in
+    s, List.mapi (fun k _ ->
+      let st = Random.State.make [| Hashtbl.hash s ; k |] in
+      List.init 3 (fun _ -> Typr.Gen.gen_call ~arrow:k st fty
+                            |> Option.map (fun (c : Typr.Gen.sample) -> Typr.Gen.call_to_r c.call)))
+      (Typr.Gen.arrows fty)) sigs
+
+let run_canonical () =
+  let forward = draws canonical and backward = draws (List.rev canonical) in
+  canonical |> List.iter (fun s ->
+    Printf.printf "%s: %s\n" s
+      (if List.assoc s forward = List.assoc s backward then "same calls" else "DIFFERENT CALLS"))
+
 let () =
   Lang.Driver.setup () ;
-  PEnv.sequential_handler PEnv.empty (fun () -> run () ; run_per_arrow ()) () |> ignore
+  PEnv.sequential_handler PEnv.empty
+    (fun () -> run () ; run_per_arrow () ; run_canonical ()) () |> ignore
