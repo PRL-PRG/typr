@@ -77,10 +77,10 @@ it is written, so a run killed half-way still leaves everything up to that
 point -- with a `"k"` field naming the record: `run`, `file`, `entry_point`,
 `native_def`, `link`, `r_def`, `annotation_error`, `phase`, `summary`, and
 `crash` when the run died from the inside. A `native_def` comes from
-NativeSem's `Runner.on_outcome` hook; an `r_def` from what Rsem did (whether
-the name ended up typed, whether the time limit fired) plus the block it
-printed for an error, which is captured per definition and re-emitted, so the
-text output is unchanged by `--report`. Every number the dashboard shows is
+NativeSem's `Runner.on_outcome` hook; an `r_def` from Rsem's
+`Driver.on_outcome` hook (the checker's error, for a definition it could not
+type) and from what Rsem did (whether the name ended up typed, whether the
+time limit fired). The text output is unchanged by `--report`. Every number the dashboard shows is
 recomputed from the individual records; `summary` only says whether the run
 completed.
 
