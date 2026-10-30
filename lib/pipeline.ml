@@ -23,8 +23,9 @@ type options = {
      sides: it overrides [native.timeout] when set. *)
   timeout : float option ;
   (* Give the [dyn] type to the R names nothing binds, instead of reporting
-     them. Off by default. Only the R side has the choice: NativeSem already
-     types the C identifiers it cannot resolve this way. *)
+     them. Off by default. Only the R side has the choice: on the native side,
+     a C function that fails to type leaves its callers with an unbound
+     variable, unless [native.fallback_c_signature] binds it. *)
   gradual : bool ;
   (* Print the dependency information instead of type-checking. *)
   deps_only : bool ;
@@ -32,6 +33,9 @@ type options = {
   report : string option ;
   (* Fuzz the inferred types of the package's functions (see {!Fuzz}). *)
   fuzz : Fuzz.options option ;
+  (* Which native functions [native.fallback_c_signature] may bind at their
+     declared C signature (see [R_c_typing.Runner.fallback_mode]). *)
+  fallback_mode : R_c_typing.Runner.fallback_mode ;
 }
 
 let default_native_options : R_c_typing.Runner.cmd_options = {
@@ -43,7 +47,8 @@ let default_native_options : R_c_typing.Runner.cmd_options = {
 
 let default_options =
   { native = default_native_options ; prelude = [] ; include_dirs = [] ;
-    timeout = None ; gradual = false ; deps_only = false ; report = None ; fuzz = None }
+    timeout = None ; gradual = false ; deps_only = false ; report = None ; fuzz = None ;
+    fallback_mode = R_c_typing.Runner.All }
 
 (* NativeSem has a per-function timeout of its own, for when it is used as a
    standalone CLI. Driven from here the policy comes from [Timeout.guard]
@@ -739,6 +744,7 @@ let report_deps opts (pkg : Pkg.t) entry_points files =
 
 let run opts root =
   Driver.gradual := opts.gradual ;
+  R_c_typing.Runner.fallback_mode := opts.fallback_mode ;
   let module R = Report in
   let rep = { r = R.create opts.report ; stats = Hashtbl.create 32 ;
               fuzzing = opts.fuzz <> None ; typed = [] } in
@@ -754,6 +760,10 @@ let run opts root =
         ("timeout", (match opts.timeout with Some t -> R.F t | None -> R.N)) ;
         ("prelude", R.L opts.prelude) ;
         ("fallback_c_signature", R.B opts.native.fallback_c_signature) ;
+        ("fallback_mode", R.S (if not opts.native.fallback_c_signature then "none"
+                               else match opts.fallback_mode with
+                                 | R_c_typing.Runner.All -> "all"
+                                 | R_c_typing.Runner.Except_all_sexp -> "except-all-sexp")) ;
         ("log_times", R.B opts.native.log_times) ; ("prefix", R.S pkg.prefix) ;
         ("n_r_files", R.I (List.length pkg.r_files)) ;
         ("n_c_files", R.I (List.length pkg.c_files)) ;

@@ -1,6 +1,7 @@
 let usage =
   "typr [--deps] [--gradual] [--debug] [--timeout SECONDS] [--prelude FILE]\n\
-  \      [--report FILE] [--fallback-c-signature] [--lambda-rec SECONDS] [--log-times]\n\
+  \      [--report FILE] [--fallback-c-signature] [--fallback-mode MODE]\n\
+  \      [--lambda-rec SECONDS] [--log-times]\n\
   \      [--call-graph FILE]\n\
   \      [--fuzz-runner CMD [--fuzz-harness DIR] [--fuzz-samples N] [--fuzz-seed N]\n\
   \       [--fuzz-dir DIR] [--fuzz-call-timeout SECONDS]]\n\
@@ -14,6 +15,7 @@ let include_dirs = ref []
 let prelude = ref []
 let report = ref None
 let fallback = ref false
+let fallback_mode = ref None
 let log_times = ref false
 let lambda_rec = ref None
 let call_graph = ref None
@@ -44,6 +46,10 @@ let speclist =
      "FILE  Write a machine-readable account of the run (one JSON record per line)") ;
     ("--fallback-c-signature", Arg.Set fallback,
      "Bind a native function that fails to type at its declared C signature") ;
+    ("--fallback-mode", Arg.Symbol ([ "all" ; "except-all-sexp" ; "none" ], fun m -> fallback_mode := Some m),
+     " Which functions --fallback-c-signature applies to: all of them (the default), \
+      all but those whose parameters and result are all SEXP, or none. Implies \
+      --fallback-c-signature, but for none") ;
     ("--lambda-rec", Arg.Float (fun f -> lambda_rec := Some f),
      "SECONDS  Also type recursive native functions as recursive groups, within that time") ;
     ("--log-times", Arg.Set log_times,
@@ -79,12 +85,20 @@ let () =
     let fuzz = !fuzz_runner |> Option.map (fun runner ->
       { Typr.Fuzz.runner ; harness = !fuzz_harness ; samples = !fuzz_samples ;
         seed = !fuzz_seed ; dir = !fuzz_dir ; call_timeout = !fuzz_call_timeout }) in
+    (* [--fallback-mode] picks the functions the fallback applies to, and
+       turns it on unless it is [none]. *)
+    let fallback_on, fallback_mode =
+      match !fallback_mode with
+      | Some "none" -> false, R_c_typing.Runner.All
+      | Some "except-all-sexp" -> true, R_c_typing.Runner.Except_all_sexp
+      | Some _ -> true, R_c_typing.Runner.All
+      | None -> !fallback, R_c_typing.Runner.All in
     let native =
       { Typr.Pipeline.default_native_options with
-        debug = !debug ; fallback_c_signature = !fallback ; log_times = !log_times ;
+        debug = !debug ; fallback_c_signature = fallback_on ; log_times = !log_times ;
         lambda_rec = !lambda_rec ;
         call_graph = !call_graph } in
     Typr.Pipeline.run
       { native ; prelude = !prelude ; include_dirs = !include_dirs ;
         timeout = !timeout ; gradual = !gradual ; deps_only = !deps_only ;
-        report = !report ; fuzz } root
+        report = !report ; fuzz ; fallback_mode } root

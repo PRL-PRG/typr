@@ -69,6 +69,11 @@ dune exec typr -- --report run.jsonl path/to/package
 # NativeSem options passed through: bind a C function that fails to type at
 # its declared signature; print its per-function timings; dump its call graph
 dune exec typr -- --fallback-c-signature --log-times --call-graph cg.dot path/to/package
+
+# The same fallback, but not for the functions whose parameters and result are
+# all SEXP (their signature only says they take and return R values); `all` is
+# the default, `none` turns the fallback off
+dune exec typr -- --fallback-mode except-all-sexp path/to/package
 ```
 
 `--report FILE` is what the [r-typing](https://github.com/PRL-PRG/r-typing)
