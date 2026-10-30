@@ -97,9 +97,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # gcc + libc6-dev: the checker preprocesses the package's real `#include <...>`
 # and asks the system compiler where its headers live.
-# libcurl4-openssl-dev: the headers of the library curl links to; without them
-# its calls of libcurl are unbound and its functions fall back to their C
-# signatures. (The other dashboard packages bundle their libraries.)
+# libcurl4-openssl-dev, libssh-dev: the headers of the libraries curl and ssh
+# link to; without them their calls of the library are unbound, and the types
+# the library declares (ssh's [ssh_session]...) unknown. (The other dashboard
+# packages bundle their libraries.)
 # r-cran-jsonlite: r-typing's parse_output.R reads the JSONL report, and the
 # fuzzing harness writes JSON with it.
 # universal-ctags: r-typing's per-package pages locate definitions with it.
@@ -109,7 +110,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # included, would then load); bubblewrap is the sandbox the calls run in.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libstdc++6 bc git parallel \
-    gcc libc6-dev libcurl4-openssl-dev \
+    gcc libc6-dev libcurl4-openssl-dev libssh-dev \
     r-base-core r-base-dev gfortran r-cran-jsonlite r-cran-bspm \
     python3-dbus python3-gi python3-apt \
     universal-ctags bubblewrap \
